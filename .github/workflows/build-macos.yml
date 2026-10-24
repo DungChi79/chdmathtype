@@ -34,6 +34,14 @@ jobs:
         run: npx tauri icon src-tauri/icons/icon.png
 
       - name: Build universal app + dmg
+        # Ký app bằng chứng chỉ tự ký lưu trong repo secrets: chữ ký ổn định
+        # theo từng bản build (không như ký ad-hoc), nên quyền Trợ năng/Tự động
+        # hoá người dùng đã cấp sẽ không bị mất khi cập nhật bản mới.
+        # Lưu ý: tự ký KHÔNG thay chứng chỉ Apple nên lần mở đầu vẫn cần
+        # chuột phải → Mở.
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
         run: npx tauri build --target universal-apple-darwin
 
       - name: Upload dmg artifact

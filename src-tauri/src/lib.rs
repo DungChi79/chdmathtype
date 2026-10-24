@@ -27,12 +27,14 @@ fn short(s: &str) -> String {
 /// "Gửi thẳng vào Word": phía web đã đặt sẵn Equation vào clipboard hệ thống
 /// (qua plugin clipboard của chính app). Lệnh này dán vào Word bằng hai cách,
 /// theo thứ tự ưu tiên:
-/// 1) Lệnh `paste` của chính Word tại vùng chọn — chỉ cần quyền Tự động hoá,
-///    không cần Trợ năng. (Lớp VBA "do Visual Basic" từng dùng ở 1.0.1 đã
-///    bị Word hiện đại loại bỏ: osascript báo lỗi cú pháp -2741 tại đó.)
+/// 1) Nhờ System Events bấm mục Paste trong menu Edit của Word — điều khiển
+///    giao diện (AX), không tổng hợp phím tắt nên tránh được lỗi keystroke
+///    (1002). (Lệnh `paste` trần từng dùng ở 1.0.2 đã chết: Word hiện đại
+///    không còn lệnh đó, osascript báo -2753 "variable paste is not defined";
+///    lớp VBA ở 1.0.1 cũng đã chết với -2741.)
 /// 2) Dự phòng: nhờ System Events gửi Cmd+V — cần quyền Trợ năng.
-/// Nếu cả hai đều thất bại, trả về hướng dẫn theo đúng loại quyền còn thiếu
-/// kèm chi tiết lỗi gốc để người dùng chụp màn hình gửi lại khi cần.
+/// Nếu cả hai đều thất bại, trả về cả hai lỗi gốc kèm cả hai cách sửa
+/// (Tự động hoá và Trợ năng) để không bao giờ giấu mất một lớp lỗi nữa.
 #[tauri::command]
 fn push_to_word() -> Result<String, String> {
     const NO_DOC: &str = "Chưa có tài liệu Word nào đang mở. Hãy mở sẵn một tài liệu Word, đặt con trỏ vào chỗ cần chèn rồi bấm lại.";
@@ -44,7 +46,16 @@ tell application "Microsoft Word"
         error "NO_DOC"
     end if
     activate
-    paste
+end tell
+delay 0.35
+tell application "System Events"
+    tell process "Microsoft Word"
+        try
+            click menu item "Paste" of menu 1 of menu bar item "Edit" of menu bar 1
+        on error
+            click menu item "Dán" of menu 1 of menu bar item "Sửa" of menu bar 1
+        end try
+    end tell
 end tell
 return "ok"
 "#;
@@ -86,22 +97,13 @@ return "ok"
     {
         return Err("Không tìm thấy Microsoft Word trên máy này.".into());
     }
-    let mut msg = format!(
-        "Không gửi được vào Word. Lỗi lớp dán của Word: [{}]. Lỗi lớp phím tắt: [{}].",
+    // Luôn hiện cả hai lỗi và cả hai cách sửa — không giấu lớp nào nữa.
+    let _ = both;
+    Err(format!(
+        "Không gửi được vào Word. Lỗi lớp bấm menu Paste: [{}]. Lỗi lớp phím tắt: [{}]. Cách sửa: (1) Tự động hoá — Cài đặt hệ thống → Quyền riêng tư & Bảo mật → Tự động hoá, mở mục ChdMathType và bật Microsoft Word; (2) Trợ năng — trong cùng màn hình Quyền riêng tư & Bảo mật, xóa ChdMathType khỏi danh sách Trợ năng (nút -), thêm lại từ thư mục Applications (đúng bản đang chạy), thoát hẳn app (Cmd+Q) rồi mở lại và thử lần nữa.",
         short(&e1),
         short(&e2)
-    );
-    if both.contains("-1743") || both.contains("not authorized") {
-        msg.push_str(" Cách sửa (1) — Tự động hoá: mở Cài đặt hệ thống → Quyền riêng tư & Bảo mật → Tự động hoá, mở mục ChdMathType và bật Microsoft Word.");
-    }
-    if both.contains("-25211")
-        || both.contains("assistive")
-        || both.contains("send keystrokes")
-        || both.contains("1002")
-    {
-        msg.push_str(" Cách sửa (2) — Trợ năng: macOS coi mỗi bản build mới như một app mới, nên mục đã bật từ bản cũ có thể không còn khớp bản đang chạy. Mở Cài đặt hệ thống → Quyền riêng tư & Bảo mật → Trợ năng, xóa ChdMathType khỏi danh sách (nút -), thêm lại từ thư mục Applications, thoát hẳn app (Cmd+Q) rồi mở lại và thử lần nữa.");
-    }
-    Err(msg)
+    ))
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
