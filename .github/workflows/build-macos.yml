@@ -55,9 +55,10 @@ jobs:
           # macOS dùng base64 -D (không phải --decode kiểu GNU).
           printf '%s' "$APPLE_CERTIFICATE" | base64 -D > /tmp/chd-cert.p12
           wc -c /tmp/chd-cert.p12
-          # Kiểm chứng cặp p12/mật khẩu trước khi import (mật khẩu là secret
-          # nên GitHub tự che trong log).
-          openssl pkcs12 -in /tmp/chd-cert.p12 -nokeys -passin "pass:$APPLE_CERTIFICATE_PASSWORD" -info -noout
+          # (Đã bỏ bước kiểm chứng bằng openssl: openssl trên runner không
+          # nạp legacy provider nên không đọc được định dạng RC2-40 của
+          # file p12 legacy — bước đó tự gãy dù file hoàn toàn đúng.
+          # Bộ nạp của macOS (security import) đọc định dạng này bình thường.)
           security create-keychain -p temppass build.keychain
           security import /tmp/chd-cert.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple: -s -k temppass build.keychain

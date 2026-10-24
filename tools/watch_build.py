@@ -14,17 +14,32 @@ def get(url):
         return json.load(r)
 
 
+import subprocess
+
+try:
+    head_sha = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd="/home/hatch/workspace/chdmathtype-native",
+        text=True).strip()
+except Exception:
+    head_sha = ""
+print("following run for HEAD:", head_sha, flush=True)
+
 deadline = time.time() + 30 * 60
 run = {}
 while time.time() < deadline:
     try:
-        data = get(f"{API}/actions/runs?per_page=3")
+        data = get(f"{API}/actions/runs?per_page=10")
         runs = data.get("workflow_runs") or []
-        if runs:
-            run = runs[0]
+        # Theo dõi đúng run của commit hiện tại; bỏ qua các run cũ (tránh
+        # nhận nhầm run trước đó khi run mới chưa kịp xếp hàng).
+        mine = [r for r in runs if r.get("head_sha") == head_sha] if head_sha else runs[:1]
+        if mine:
+            run = mine[0]
             print(f"run {run['id']}: status={run['status']} conclusion={run.get('conclusion')}", flush=True)
             if run["status"] == "completed":
                 break
+        else:
+            print("waiting for run of HEAD to appear...", flush=True)
     except Exception as e:
         print("poll error:", e, flush=True)
     time.sleep(45)
