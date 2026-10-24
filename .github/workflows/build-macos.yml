@@ -1,0 +1,52 @@
+name: Build macOS (universal)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Add macOS targets (Apple Silicon + Intel)
+        run: rustup target add aarch64-apple-darwin x86_64-apple-darwin
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install Tauri CLI
+        run: npm install
+
+      - name: Generate icon set from icons/icon.png
+        run: npx tauri icon src-tauri/icons/icon.png
+
+      - name: Build universal app + dmg
+        run: npx tauri build --target universal-apple-darwin
+
+      - name: Upload dmg artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ChdMathType-macOS-universal
+          path: src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+          if-no-files-found: error
+
+      - name: Publish release with the dmg
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: mac-v1.0.${{ github.run_number }}
+          name: ChdMathType cho macOS — bản build ${{ github.run_number }}
+          body: |
+            Bản ChdMathType cho macOS (universal: chạy cả Apple Silicon và Intel).
+            Tải file .dmg ở dưới, mở lên và kéo ChdMathType vào thư mục Applications.
+            Lần mở đầu tiên: nhấp chuột phải vào app → Mở (vì app chưa có chứng chỉ Apple).
+          files: src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
