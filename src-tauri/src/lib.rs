@@ -77,6 +77,8 @@ return "ok"
         return Err(NO_DOC.into());
     }
 
+    // Cả hai lớp đều thất bại: HIỆN CẢ HAI LỖI, không che lớp nào nữa
+    // (bản 1.0.2 chỉ hiện lỗi lớp phím tắt nên lỗi của lớp Word bị giấu).
     let both = format!("{e1} || {e2}").to_lowercase();
     if both.contains("-10810")
         || both.contains("can't be found")
@@ -84,29 +86,22 @@ return "ok"
     {
         return Err("Không tìm thấy Microsoft Word trên máy này.".into());
     }
-    if both.contains("-25211") || both.contains("assistive") {
-        return Err(format!(
-            "macOS chưa cấp quyền Trợ năng cho ChdMathType. Mở Cài đặt hệ thống → Quyền riêng tư & Bảo mật → Trợ năng, bật ChdMathType, thoát hẳn app (Cmd+Q) rồi mở lại và thử lần nữa. (Chi tiết lỗi: {})",
-            short(&e2)
-        ));
-    }
-    if both.contains("send keystrokes") || both.contains("1002") {
-        return Err(format!(
-            "macOS chưa cho phép gửi phím tắt vào Word. Mở Cài đặt hệ thống → Quyền riêng tư & Bảo mật → Trợ năng: xóa ChdMathType khỏi danh sách (nút -), thêm lại từ thư mục Applications, thoát hẳn app (Cmd+Q) rồi mở lại và thử lần nữa. (Chi tiết lỗi: {})",
-            short(&e2)
-        ));
-    }
-    if both.contains("-1743") || both.contains("not authorized") {
-        return Err(format!(
-            "macOS chưa cho ChdMathType điều khiển ứng dụng khác. Mở Cài đặt hệ thống → Quyền riêng tư & Bảo mật → Tự động hoá, mở mục ChdMathType và bật Microsoft Word (và System Events nếu có), rồi thử lại. (Chi tiết lỗi: {})",
-            short(&e1)
-        ));
-    }
-    Err(format!(
-        "Không gửi được vào Word bằng cả hai cách. Chi tiết lỗi: [{}] / [{}]. Hãy chụp màn hình thông báo này gửi lại để mình xử lý đúng lỗi nhé.",
+    let mut msg = format!(
+        "Không gửi được vào Word. Lỗi lớp dán của Word: [{}]. Lỗi lớp phím tắt: [{}].",
         short(&e1),
         short(&e2)
-    ))
+    );
+    if both.contains("-1743") || both.contains("not authorized") {
+        msg.push_str(" Cách sửa (1) — Tự động hoá: mở Cài đặt hệ thống → Quyền riêng tư & Bảo mật → Tự động hoá, mở mục ChdMathType và bật Microsoft Word.");
+    }
+    if both.contains("-25211")
+        || both.contains("assistive")
+        || both.contains("send keystrokes")
+        || both.contains("1002")
+    {
+        msg.push_str(" Cách sửa (2) — Trợ năng: macOS coi mỗi bản build mới như một app mới, nên mục đã bật từ bản cũ có thể không còn khớp bản đang chạy. Mở Cài đặt hệ thống → Quyền riêng tư & Bảo mật → Trợ năng, xóa ChdMathType khỏi danh sách (nút -), thêm lại từ thư mục Applications, thoát hẳn app (Cmd+Q) rồi mở lại và thử lần nữa.");
+    }
+    Err(msg)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
