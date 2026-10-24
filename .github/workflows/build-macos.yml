@@ -79,7 +79,7 @@ jobs:
           cp -R "$APP" /tmp/dmg-staging/
           ln -s /Applications /tmp/dmg-staging/Applications
           mkdir -p src-tauri/target/universal-apple-darwin/release/bundle/dmg
-          hdiutil create -volname "ChdMathType" -srcfolder /tmp/dmg-staging -ov -format UDZO "src-tauri/target/universal-apple-darwin/release/bundle/dmg/ChdMathType_1.0.5_universal.dmg"
+          hdiutil create -volname "ChdMathType" -srcfolder /tmp/dmg-staging -ov -format UDZO "src-tauri/target/universal-apple-darwin/release/bundle/dmg/ChdMathType_1.0.6_universal.dmg"
           ls -la src-tauri/target/universal-apple-darwin/release/bundle/dmg/
 
       - name: Upload dmg artifact

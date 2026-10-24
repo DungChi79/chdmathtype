@@ -69,7 +69,8 @@
         line-height: 1.55;
         -webkit-font-smoothing: antialiased;
       }
-      .wrap { max-width: 1240px; margin: 0 auto; padding: 18px 18px 44px; }
+      .wrap { max-width: none; margin: 0 auto; padding: 18px 28px 44px; }
+      @media (max-width: 720px) { .wrap { padding: 14px 14px 36px; } }
 
       /* ---------- Header ---------- */
       header.top {
@@ -401,6 +402,24 @@
       #katexMeasure { position: absolute; left: -10000px; top: 0; visibility: hidden; font-size: 22px; white-space: nowrap; }
       #mjMeasure { position: absolute; left: -10000px; top: 0; visibility: hidden; font-size: 12pt; white-space: nowrap; }
 
+      /* ---------- Xem trước Markdown (tab Markdown) ---------- */
+      .md-doc h1 { font-size: 24px; margin: 4px 0 10px; line-height: 1.3; }
+      .md-doc h2 { font-size: 20px; margin: 14px 0 8px; line-height: 1.35; }
+      .md-doc h3 { font-size: 17px; margin: 12px 0 6px; }
+      .md-doc h4, .md-doc h5, .md-doc h6 { font-size: 15.5px; margin: 10px 0 6px; }
+      .md-doc ul, .md-doc ol { margin: 0 0 10px; padding-left: 24px; }
+      .md-doc li { margin-bottom: 3px; }
+      .md-doc blockquote { margin: 0 0 10px; padding: 4px 14px; border-left: 3px solid var(--accent); color: var(--muted); }
+      .md-doc blockquote p { margin: 0; }
+      .md-doc code { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: .88em; background: var(--surface-2); border-radius: 5px; padding: 1px 5px; }
+      .md-doc pre { margin: 0 0 10px; background: var(--surface-2); border-radius: 8px; padding: 10px 12px; overflow-x: auto; }
+      .md-doc pre code { background: none; padding: 0; font-size: 13px; }
+      .md-doc table { border-collapse: collapse; margin: 0 0 12px; font-size: 14.5px; }
+      .md-doc th, .md-doc td { border: 1px solid var(--line-2); padding: 6px 10px; text-align: left; }
+      .md-doc th { background: var(--surface-2); }
+      .md-doc hr { border: none; border-top: 1px solid var(--line-2); margin: 14px 0; }
+      .md-doc a { color: var(--accent-strong); }
+
       /* ---------- Toast & footer ---------- */
       #toast {
         position: fixed; left: 50%; bottom: 26px; transform: translate(-50%, 90px);
@@ -445,6 +464,7 @@
           <button class="tab-btn active" id="tabBtnEdit" type="button" data-tab="tabEdit">Soạn thảo</button>
           <button class="tab-btn" id="tabBtn1" type="button" data-tab="tab1">Chuyển đổi file Word</button>
           <button class="tab-btn" id="tabBtn2" type="button" data-tab="tab2">LaTeX → Equation / MathType</button>
+          <button class="tab-btn" id="tabBtn3" type="button" data-tab="tab3">Markdown → Equation / MathType</button>
         </nav>
 
         <!-- ================= TAB SOẠN THẢO ================= -->
@@ -487,6 +507,7 @@
 
                 <div class="stage-label" style="margin-top:16px;"><span>Mã LaTeX — đồng bộ hai chiều với khung trên</span><button class="mini-btn" id="btnCopyAllLatex" type="button">Sao chép tất cả</button></div>
                 <textarea class="latex" id="latexInput" spellcheck="false" placeholder="Ví dụ: x = \frac{-b \pm \sqrt{b^2-4ac}}{2a}"></textarea>
+                <p class="seg-count" style="margin-top:6px;">Khi chép bằng nút “Chép LaTeX” hoặc “Sao chép tất cả”, mã sẽ tự kèm <b>$...$</b> nếu đang ở chế độ Inline, <b>$$...$$</b> nếu Display — dán thẳng vào các công cụ biên dịch LaTeX / Markdown là dùng được ngay.</p>
 
                 <div class="stage-label" style="margin-top:16px;"><span>Xem trước</span></div>
                 <div class="preview-box" id="previewBox"></div>
@@ -495,7 +516,7 @@
                   <button class="abtn hero" id="btnCopyWord" type="button">Chép cho Word<small>Chép Equation gốc — dán (Cmd+V) thẳng vào Word đang mở · Ctrl+Enter</small></button>
                   <button class="abtn" id="btnDocxEq" type="button">Tải .docx — Equation<small>File Word chứa công thức Equation gốc</small></button>
                   <button class="abtn" id="btnDocxMt" type="button">Tải .docx — MathType<small>Đối tượng MathType thật, nhấp đúp sửa trên Windows</small></button>
-                  <button class="abtn" id="btnCopyLatex" type="button">Chép LaTeX<small>Chép mã LaTeX thuần vào clipboard</small></button>
+                  <button class="abtn" id="btnCopyLatex" type="button">Chép LaTeX<small>Chép mã LaTeX kèm $...$ (Inline) / $$...$$ (Display) — sẵn sàng cho công cụ biên dịch</small></button>
                   <button class="abtn" id="btnPng" type="button">Tải PNG<small>Ảnh nét cao của công thức</small></button>
                   <button class="abtn" id="btnSvg" type="button">Tải SVG<small>Vector, phóng to không vỡ</small></button>
                   <button class="abtn gold" id="btnSaveHist" type="button">Lưu vào lịch sử<small>Giữ lại trong trình duyệt này để dùng lại</small></button>
@@ -670,8 +691,52 @@
               <p>Đoạn văn trong file .docx có chứa $...$ sẽ được xây lại khi chuyển đổi, nên định dạng phức tạp bên trong riêng đoạn đó (hyperlink, trộn nhiều font…) có thể được đơn giản hoá.</p>
             </div>
           </div>
-          <p class="build-stamp">Bản cập nhật: 23/10/2026 · ChdMathType Web v1 · mẫu chỉ có ô trống · mặc định Inline · tab LaTeX có xem trước & chép sang Word</p>
+          <p class="build-stamp">Bản cập nhật: 24/10/2026 · ChdMathType Web v1.1 · giao diện full màn hình · chép LaTeX kèm dấu $ · tab Markdown mới</p>
         </div><!-- /tab2 -->
+
+        <!-- ================= TAB 3: MARKDOWN -> EQUATION/MATHTYPE ================= -->
+        <div class="tabpanel" id="tab3" hidden>
+          <div class="card">
+            <h2>Dán nội dung Markdown</h2>
+            <p class="sub">Viết như soạn tài liệu Markdown thông thường: công thức vẫn là mã LaTeX trong cặp $...$ (cùng dòng), $$...$$, \(...\) hoặc \[...\] (riêng dòng, căn giữa). Định dạng Markdown được giữ nguyên khi sang Word: tiêu đề # đến ######, <strong>chữ đậm</strong>, <em>chữ nghiêng</em>, danh sách - / 1., bảng | … |, trích dẫn &gt;, khối mã ```, đường kẻ --- và liên kết [chữ](địa chỉ).</p>
+            <textarea class="paste" id="mdInput" spellcheck="false" placeholder="# Đề kiểm tra Toán 12&#10;**Câu 1.** Giải phương trình $x^2-5x+6=0$.&#10;&#10;- Tính biệt thức $\Delta$&#10;- Kết luận nghiệm&#10;&#10;$$\Delta = b^2-4ac$$"></textarea>
+            <div style="margin-top:10px; display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
+              <button class="btn small" id="pickMdBtn" type="button">Chọn file .md…</button>
+              <input type="file" id="mdFileInput" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden />
+              <span class="seg-count" id="mdCount" style="margin-top:0;">Chưa có nội dung Markdown nào.</span>
+            </div>
+            <div class="notice err" id="mdFileError" role="alert"></div>
+            <div class="stage-label" style="margin-top:16px;"><span>Xem trước nội dung Markdown</span></div>
+            <div class="preview-doc md-doc" id="mdPreview"><span class="pv-empty">Nội dung xem trước sẽ hiện ở đây — tiêu đề, danh sách, bảng và định dạng đậm/nghiêng được thể hiện như trong Word, các đoạn $...$ hiện thành công thức.</span></div>
+            <div style="margin-top:12px; display:flex; flex-wrap:wrap; gap:10px; align-items:flex-start;">
+              <button class="btn" id="btnMdCopyWord" type="button">Chép toàn bộ sang Word</button>
+              <span class="seg-count" style="margin-top:2px; flex:1; min-width:220px;">Dán (Cmd+V) thẳng vào Word đang mở: định dạng Markdown thành định dạng Word, mỗi đoạn LaTeX thành Equation gốc của Word — khỏi tải file. Riêng MathType không chép qua clipboard được (clipboard không chứa được đối tượng OLE) nên bản MathType vẫn dùng nút tải file ở dưới.</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>Chuyển thành</h2>
+            <div class="radios" role="radiogroup" aria-label="Đích chuyển đổi Markdown">
+              <label class="radio-card"><input type="radio" name="tab3Mode" value="omml" checked /> Equation của Word (OMML)</label>
+              <label class="radio-card"><input type="radio" name="tab3Mode" value="mathtype" /> MathType (Equation.DSMT4)</label>
+            </div>
+            <div style="margin-top:16px; display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
+              <button class="btn primary" id="tab3ConvertBtn" type="button">Chuyển đổi &amp; tải file Word</button>
+              <span class="seg-count" id="tab3Status" style="margin-top:0;"></span>
+            </div>
+            <div class="notice err" id="tab3Error" role="alert"></div>
+            <div class="result" id="tab3Result">
+              <h3>Đã tạo file mới xong</h3>
+              <p id="tab3ResultText"></p>
+              <ul class="fails" id="tab3Warnings"></ul>
+            </div>
+            <div class="honest-note">
+              <p><strong>Phạm vi Markdown được hỗ trợ:</strong> tiêu đề, đoạn văn, đậm/nghiêng/đậm-nghiêng, gạch bỏ ~~…~~, mã trong dòng `…`, khối mã ```, danh sách (gồm mục việc - [ ] / - [x] và danh sách lồng nhau tối đa 3 cấp), bảng, trích dẫn, đường kẻ ngang và liên kết. Công thức nhiều dòng trong $$...$$ (ma trận, hệ cases…) vẫn nhận diện như ở tab LaTeX.</p>
+              <p><strong>Về chế độ MathType:</strong> file MathType do bộ ghi MTEF của ChdMathType tạo ra — người dùng MathType trên Windows nhấp đúp mở và sửa được (đã kiểm chứng thực tế). Ảnh xem trước dạng PNG chỉ để hiển thị khi mở file trên máy không có MathType — nội dung công thức thật nằm trong dữ liệu MathType đi kèm.</p>
+            </div>
+          </div>
+          <p class="build-stamp">Bản cập nhật: 24/10/2026 · ChdMathType Web v1.1 · tab Markdown giữ định dạng khi sang Word</p>
+        </div><!-- /tab3 -->
 
         <div id="katexMeasure" aria-hidden="true"></div>
         <div id="mjMeasure" aria-hidden="true"></div>
@@ -2244,7 +2309,324 @@ async function convertDocxLatex(state, opts) {
   return { data, converted, parasTouched, warnings };
 }
 
-const MTCore = { cfbOpen, parseEquationNative, mtefToLatex, oleToLatex, mathmlToOmml, openDocx, exportDocx, exportLatexDocx, parseLatex, latexToEquationNative, cfbWrite, makeMathTypeOle, findLatexSegments, textToDocx, convertDocxLatex, MTEFError };
+/* ================= Markdown -> Equation / MathType ================= */
+// Markdown carries the same LaTeX math as the plain-text flow ($...$,
+// $$...$$, \(...\), \[...\]); the parser turns a Markdown document into
+// block objects whose inline content is node lists ({s,b,i,st,code} text
+// runs, {math,display} formulas, {link,children}) so the .docx writer
+// here and the app's preview / clipboard renderers walk one structure.
+function mdParseEmphasis(s, flags, out) {
+  let buf = '';
+  const flush = () => {
+    if (buf) { out.push({ s: buf, b: !!flags.b, i: !!flags.i, st: !!flags.st, code: false }); buf = ''; }
+  };
+  const wordChar = ch => !!ch && /[0-9A-Za-zÀ-ỹ]/.test(ch);
+  let i = 0;
+  while (i < s.length) {
+    const c = s[i];
+    if (c === '\\' && i + 1 < s.length && '$`*_~[]\\'.indexOf(s[i + 1]) >= 0) { buf += s[i + 1]; i += 2; continue; }
+    if (c === '`') {
+      const j = s.indexOf('`', i + 1);
+      if (j > i + 1) { flush(); out.push({ s: s.slice(i + 1, j), b: !!flags.b, i: !!flags.i, st: !!flags.st, code: true }); i = j + 1; continue; }
+    }
+    if (c === '!' && s[i + 1] === '[') {
+      const m = /^!\[([^\]]*)\]\([^)]*\)/.exec(s.slice(i));
+      if (m) { buf += m[1]; i += m[0].length; continue; }
+    }
+    if (c === '[') {
+      const m = /^\[([^\]]+)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/.exec(s.slice(i));
+      if (m) {
+        flush();
+        const kids = [];
+        mdParseEmphasis(m[1], flags, kids);
+        out.push({ link: m[2], children: kids });
+        i += m[0].length; continue;
+      }
+    }
+    const tri = s.slice(i, i + 3), duo = s.slice(i, i + 2);
+    if (tri === '***' || tri === '___') {
+      const j = s.indexOf(tri, i + 3);
+      if (j > i + 3) { flush(); mdParseEmphasis(s.slice(i + 3, j), Object.assign({}, flags, { b: true, i: true }), out); i = j + 3; continue; }
+    }
+    if (duo === '**' || duo === '__') {
+      if (duo === '__' && wordChar(s[i - 1])) { buf += duo; i += 2; continue; }
+      const j = s.indexOf(duo, i + 2);
+      if (j > i + 2) { flush(); mdParseEmphasis(s.slice(i + 2, j), Object.assign({}, flags, { b: true }), out); i = j + 2; continue; }
+    }
+    if (duo === '~~') {
+      const j = s.indexOf('~~', i + 2);
+      if (j > i + 2) { flush(); mdParseEmphasis(s.slice(i + 2, j), Object.assign({}, flags, { st: true }), out); i = j + 2; continue; }
+    }
+    if (c === '*' || c === '_') {
+      if (c === '_' && wordChar(s[i - 1])) { buf += c; i++; continue; }
+      let j = i + 1;
+      while (j < s.length && !(s[j] === c && s[j + 1] !== c && s[j - 1] !== c)) j++;
+      if (j < s.length && j > i + 1 && s[j - 1] !== ' ' && (c === '*' || !wordChar(s[j + 1]))) {
+        flush(); mdParseEmphasis(s.slice(i + 1, j), Object.assign({}, flags, { i: true }), out); i = j + 1; continue;
+      }
+    }
+    buf += c; i++;
+  }
+  flush();
+}
+function mdInlineNodes(text) {
+  const segs = findLatexSegments(text);
+  const nodes = [];
+  let pos = 0;
+  for (const sg of segs) {
+    if (sg.start > pos) mdParseEmphasis(text.slice(pos, sg.start).replace(/\\\$/g, '$'), {}, nodes);
+    nodes.push({ math: sg.latex, display: !!sg.display });
+    pos = sg.end;
+  }
+  if (pos < text.length) mdParseEmphasis(text.slice(pos).replace(/\\\$/g, '$'), {}, nodes);
+  return nodes;
+}
+function parseMarkdown(text) {
+  const ext = extractMultilineDisplay(String(text));
+  const lines = ext.text.split(/\r?\n/);
+  const blocks = [];
+  const isBlank = l => !l.trim();
+  const headingRe = /^(#{1,6})\s+(.*?)\s*#*\s*$/;
+  const hrRe = /^\s{0,3}([-*_])(?:\s*\1){2,}\s*$/;
+  const listRe = /^(\s*)([-*+]|\d{1,9}[.)])\s+(.*)$/;
+  const fenceRe = /^\s*(```+|~~~+)/;
+  function splitRow(l) {
+    let t = l.trim();
+    if (t.charAt(0) === '|') t = t.slice(1);
+    if (t.charAt(t.length - 1) === '|' && t.charAt(t.length - 2) !== '\\') t = t.slice(0, -1);
+    return t.split('|').map(c => c.replace(/\\\|/g, '|').trim());
+  }
+  function isSepRow(l) {
+    if (l.indexOf('-') < 0) return false;
+    const cells = splitRow(l);
+    return cells.length >= 1 && cells.every(c => /^:?-{1,}:?$/.test(c));
+  }
+  function startsBlock(l, nextL) {
+    return fenceRe.test(l) || headingRe.test(l) || hrRe.test(l) || listRe.test(l) ||
+      /^\s*>/.test(l) || !!ext.blocks.get(l.trim()) ||
+      (l.indexOf('|') >= 0 && nextL !== undefined && isSepRow(nextL));
+  }
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    if (isBlank(line)) { i++; continue; }
+    const ph = ext.blocks.get(line.trim());
+    if (ph) { blocks.push({ type: 'display', latex: ph.latex }); i++; continue; }
+    const fm = fenceRe.exec(line);
+    if (fm) {
+      const closeRe = fm[1].charAt(0) === '`' ? /^\s*```/ : /^\s*~~~/;
+      const body = [];
+      i++;
+      while (i < lines.length && !closeRe.test(lines[i])) { body.push(lines[i]); i++; }
+      if (i < lines.length) i++;
+      blocks.push({ type: 'code', text: body.join('\n') });
+      continue;
+    }
+    const hm = headingRe.exec(line);
+    if (hm) { blocks.push({ type: 'heading', level: hm[1].length, nodes: mdInlineNodes(hm[2]) }); i++; continue; }
+    if (hrRe.test(line)) { blocks.push({ type: 'hr' }); i++; continue; }
+    if (line.indexOf('|') >= 0 && i + 1 < lines.length && isSepRow(lines[i + 1])) {
+      const headerCells = splitRow(line);
+      const sepCells = splitRow(lines[i + 1]);
+      const aligns = sepCells.map(c => c.charAt(0) === ':' && c.charAt(c.length - 1) === ':' ? 'center' : (c.charAt(c.length - 1) === ':' ? 'right' : 'left'));
+      const ncol = Math.max(headerCells.length, sepCells.length);
+      while (aligns.length < ncol) aligns.push('left');
+      i += 2;
+      const rows = [];
+      while (i < lines.length && !isBlank(lines[i]) && lines[i].indexOf('|') >= 0) { rows.push(splitRow(lines[i])); i++; }
+      const pad = arr => { const a = arr.slice(0, ncol); while (a.length < ncol) a.push(''); return a; };
+      blocks.push({ type: 'table', aligns, header: pad(headerCells).map(mdInlineNodes), rows: rows.map(r => pad(r).map(mdInlineNodes)) });
+      continue;
+    }
+    if (/^\s*>/.test(line)) {
+      const parts = [];
+      while (i < lines.length && /^\s*>/.test(lines[i])) { parts.push(lines[i].replace(/^\s*>\s?/, '')); i++; }
+      blocks.push({ type: 'quote', nodes: mdInlineNodes(parts.join(' ')) });
+      continue;
+    }
+    if (listRe.test(line)) {
+      const items = [];
+      let ordered = false, first = true;
+      while (i < lines.length) {
+        const m2 = listRe.exec(lines[i]);
+        if (m2) {
+          if (first) { ordered = /\d/.test(m2[2]); first = false; }
+          let txt = m2[3];
+          let task = null;
+          const tm = /^\[([ xX])\]\s+(.*)$/.exec(txt);
+          if (tm) { task = tm[1].toLowerCase() === 'x'; txt = tm[2]; }
+          items.push({ level: Math.min(2, Math.floor(m2[1].replace(/\t/g, '    ').length / 2)), text: txt, task });
+          i++;
+        } else if (!isBlank(lines[i]) && items.length && !startsBlock(lines[i], lines[i + 1])) {
+          items[items.length - 1].text += ' ' + lines[i].trim();
+          i++;
+        } else break;
+      }
+      blocks.push({ type: 'list', ordered, items: items.map(it => ({ level: it.level, task: it.task, nodes: mdInlineNodes(it.text) })) });
+      continue;
+    }
+    const parts = [line.trim()];
+    i++;
+    while (i < lines.length && !isBlank(lines[i]) && !startsBlock(lines[i], lines[i + 1])) { parts.push(lines[i].trim()); i++; }
+    const joined = parts.join(' ');
+    const segs = findLatexSegments(joined);
+    if (segs.length === 1 && segs[0].display && joined.slice(0, segs[0].start).trim() === '' && joined.slice(segs[0].end).trim() === '') {
+      blocks.push({ type: 'display', latex: segs[0].latex });
+    } else {
+      blocks.push({ type: 'para', nodes: mdInlineNodes(joined) });
+    }
+  }
+  return blocks;
+}
+async function markdownToDocx(mdText, opts, JSZipLib) {
+  const warnings = [];
+  opts = Object.assign({}, opts, { warnings });
+  const alloc = new PartAllocator('', '');
+  alloc.maxRid = 2; // rId1 styles, rId2 numbering (reserved below)
+  const blocks = parseMarkdown(mdText);
+  const nums = [];
+  let converted = 0;
+  const DBL_BS = String.fromCharCode(92, 92);
+  function runPr(n, base) {
+    let rPr = '';
+    if (n.code) rPr += '<w:rFonts w:ascii="Consolas" w:hAnsi="Consolas" w:cs="Consolas"/>';
+    if (n.b || (base && base.b)) rPr += '<w:b/>';
+    if (n.i || (base && base.i)) rPr += '<w:i/>';
+    if (n.st || (base && base.st)) rPr += '<w:strike/>';
+    if (n.code) rPr += '<w:sz w:val="21"/><w:szCs w:val="21"/>';
+    if (base && base.linkStyle) rPr += '<w:color w:val="0563C1"/><w:u w:val="single"/>';
+    return rPr;
+  }
+  function textRun(n, base) {
+    const rPr = runPr(n, base);
+    const open = '<w:r>' + (rPr ? '<w:rPr>' + rPr + '</w:rPr>' : '');
+    let out = '';
+    String(n.s).split(DBL_BS).forEach((p, idx) => {
+      if (idx > 0) out += open + '<w:br/></w:r>';
+      if (p) out += open + '<w:t xml:space="preserve">' + xmlEscape(p) + '</w:t></w:r>';
+    });
+    return out;
+  }
+  async function runsXml(nodes, base) {
+    let xml = '';
+    for (const n of nodes || []) {
+      if (n.math != null) { xml += await equationXmlFor(n.math, n.display, opts, alloc); converted++; }
+      else if (n.link != null) {
+        const inner = await runsXml(n.children, Object.assign({}, base, { linkStyle: true }));
+        if (/^(https?:\/\/|mailto:)/i.test(n.link)) {
+          const rid = 'rId' + (++alloc.maxRid);
+          alloc.newRels.push('<Relationship Id="' + rid + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="' + xmlEscape(n.link).replace(/"/g, '%22') + '" TargetMode="External"/>');
+          xml += '<w:hyperlink r:id="' + rid + '">' + inner + '</w:hyperlink>';
+        } else xml += inner;
+      } else xml += textRun(n, base);
+    }
+    return xml;
+  }
+  const paras = [];
+  for (const b of blocks) {
+    if (b.type === 'heading') {
+      paras.push('<w:p><w:pPr><w:pStyle w:val="Heading' + b.level + '"/></w:pPr>' + await runsXml(b.nodes) + '</w:p>');
+    } else if (b.type === 'display') {
+      paras.push('<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="120" w:after="120"/></w:pPr>' + await equationXmlFor(b.latex, true, opts, alloc) + '</w:p>');
+      converted++;
+    } else if (b.type === 'para') {
+      paras.push('<w:p><w:pPr><w:spacing w:after="120"/></w:pPr>' + await runsXml(b.nodes) + '</w:p>');
+    } else if (b.type === 'quote') {
+      paras.push('<w:p><w:pPr><w:ind w:left="720"/><w:pBdr><w:left w:val="single" w:sz="18" w:space="10" w:color="9C2B1E"/></w:pBdr><w:spacing w:after="120"/></w:pPr>' + await runsXml(b.nodes, { i: true }) + '</w:p>');
+    } else if (b.type === 'hr') {
+      paras.push('<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="6" w:space="1" w:color="C9C4BA"/></w:pBdr><w:spacing w:before="120" w:after="120"/></w:pPr></w:p>');
+    } else if (b.type === 'code') {
+      const codeLines = b.text.split('\n');
+      for (let ci = 0; ci < codeLines.length; ci++) {
+        paras.push('<w:p><w:pPr><w:shd w:val="clear" w:color="auto" w:fill="F4F1EC"/><w:ind w:left="360"/>' +
+          '<w:spacing w:before="' + (ci === 0 ? 120 : 0) + '" w:after="' + (ci === codeLines.length - 1 ? 120 : 0) + '"/></w:pPr>' +
+          (codeLines[ci] ? textRun({ s: codeLines[ci], code: true }) : '') + '</w:p>');
+      }
+    } else if (b.type === 'list') {
+      const numId = nums.length + 1;
+      nums.push({ numId, abs: b.ordered ? 1 : 0 });
+      for (const it of b.items) {
+        const runs = await runsXml(it.nodes);
+        const pre = it.task != null ? textRun({ s: it.task ? '☑ ' : '☐ ' }) : '';
+        paras.push('<w:p><w:pPr><w:numPr><w:ilvl w:val="' + it.level + '"/><w:numId w:val="' + numId + '"/></w:numPr><w:spacing w:after="60"/></w:pPr>' + pre + runs + '</w:p>');
+      }
+    } else if (b.type === 'table') {
+      const ncol = b.header.length;
+      const borders = '<w:tblBorders>' + ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(x => '<w:' + x + ' w:val="single" w:sz="4" w:space="0" w:color="C9C4BA"/>').join('') + '</w:tblBorders>';
+      const cellXml = async (nodes, isHeader, align) => {
+        const runs = await runsXml(nodes, isHeader ? { b: true } : null);
+        return '<w:tc><w:tcPr><w:tcW w:w="0" w:type="auto"/>' + (isHeader ? '<w:shd w:val="clear" w:color="auto" w:fill="F2E3DF"/>' : '') + '</w:tcPr>' +
+          '<w:p><w:pPr>' + (align && align !== 'left' ? '<w:jc w:val="' + align + '"/>' : '') + '<w:spacing w:after="40"/></w:pPr>' + runs + '</w:p></w:tc>';
+      };
+      let tbl = '<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/>' + borders + '<w:tblLayout w:type="autofit"/></w:tblPr>';
+      tbl += '<w:tr><w:trPr><w:tblHeader/></w:trPr>';
+      for (let c = 0; c < ncol; c++) tbl += await cellXml(b.header[c], true, b.aligns[c]);
+      tbl += '</w:tr>';
+      for (const row of b.rows) {
+        tbl += '<w:tr>';
+        for (let c = 0; c < ncol; c++) tbl += await cellXml(row[c], false, b.aligns[c]);
+        tbl += '</w:tr>';
+      }
+      tbl += '</w:tbl>';
+      paras.push(tbl);
+      paras.push('<w:p/>');
+    }
+  }
+  if (!paras.length) paras.push('<w:p/>');
+  function mdLvl(ilvl, fmt, text, font, ind) {
+    return '<w:lvl w:ilvl="' + ilvl + '" w:tplc="0409000F" w:tentative="1"><w:start w:val="1"/><w:numFmt w:val="' + fmt + '"/>' +
+      '<w:lvlText w:val="' + text + '"/><w:lvlJc w:val="left"/>' +
+      '<w:pPr><w:ind w:left="' + ind + '" w:hanging="360"/></w:pPr>' +
+      (font ? '<w:rPr><w:rFonts w:ascii="' + font + '" w:hAnsi="' + font + '" w:hint="default"/></w:rPr>' : '') + '</w:lvl>';
+  }
+  const numberingXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+    '<w:abstractNum w:abstractNumId="0"><w:multiLevelType w:val="hybridMultilevel"/>' +
+    mdLvl(0, 'bullet', '•', 'Symbol', 720) + mdLvl(1, 'bullet', '–', 'Courier New', 1440) + mdLvl(2, 'bullet', '·', 'Symbol', 2160) +
+    '</w:abstractNum>' +
+    '<w:abstractNum w:abstractNumId="1"><w:multiLevelType w:val="hybridMultilevel"/>' +
+    mdLvl(0, 'decimal', '%1.', null, 720) + mdLvl(1, 'decimal', '%2.', null, 1440) + mdLvl(2, 'decimal', '%3.', null, 2160) +
+    '</w:abstractNum>' +
+    nums.map(n => '<w:num w:numId="' + n.numId + '"><w:abstractNumId w:val="' + n.abs + '"/></w:num>').join('') +
+    '</w:numbering>';
+  const docXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' +
+    '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><w:body>' +
+    paras.join('') +
+    '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr></w:body></w:document>';
+  const relsXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+    '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>' +
+    alloc.newRels.join('') + '</Relationships>';
+  const contentTypes = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+    '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+    '<Default Extension="xml" ContentType="application/xml"/>' +
+    '<Default Extension="bin" ContentType="application/vnd.openxmlformats-officedocument.oleObject"/>' +
+    '<Default Extension="png" ContentType="image/png"/>' +
+    '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+    '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
+    '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/></Types>';
+  const headingStyles = [[1, 32, '7D2015', 360, false], [2, 28, '22252B', 300, false], [3, 26, '22252B', 240, false], [4, 24, '22252B', 200, true], [5, 24, '22252B', 200, false], [6, 24, '646B76', 200, true]]
+    .map(h => '<w:style w:type="paragraph" w:styleId="Heading' + h[0] + '"><w:name w:val="heading ' + h[0] + '"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/>' +
+      '<w:pPr><w:keepNext/><w:spacing w:before="' + h[3] + '" w:after="100"/></w:pPr>' +
+      '<w:rPr><w:b/>' + (h[4] ? '<w:i/>' : '') + '<w:color w:val="' + h[2] + '"/><w:sz w:val="' + h[1] + '"/><w:szCs w:val="' + h[1] + '"/></w:rPr></w:style>').join('');
+  const stylesXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+    '<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="Times New Roman"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr></w:rPrDefault></w:docDefaults>' +
+    '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>' + headingStyles + '</w:styles>';
+  const rootRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+    '<Relationship Id="rId1" Type="' + REL_TYPE_DOC + '" Target="word/document.xml"/></Relationships>';
+  const zip = new JSZipLib();
+  zip.file('[Content_Types].xml', contentTypes);
+  zip.folder('_rels').file('.rels', rootRels);
+  zip.folder('word').file('document.xml', docXml);
+  zip.folder('word').file('styles.xml', stylesXml);
+  zip.folder('word').file('numbering.xml', numberingXml);
+  zip.folder('word/_rels').file('document.xml.rels', relsXml);
+  for (const p of alloc.newParts) zip.file(p.path, p.data);
+  const isNode = typeof window === 'undefined';
+  const data = await zip.generateAsync({ type: isNode ? 'uint8array' : 'blob', compression: 'DEFLATE' });
+  return { data, converted, warnings };
+}
+
+const MTCore = { cfbOpen, parseEquationNative, mtefToLatex, oleToLatex, mathmlToOmml, openDocx, exportDocx, exportLatexDocx, parseLatex, latexToEquationNative, cfbWrite, makeMathTypeOle, findLatexSegments, textToDocx, convertDocxLatex, parseMarkdown, markdownToDocx, MTEFError };
 if (typeof module !== 'undefined' && module.exports) module.exports = MTCore;
 global.MTCore = MTCore;
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -2612,7 +2994,7 @@ global.MTCore = MTCore;
 
   /* ---------- Chuyển tab chính ---------- */
   function switchTab(which) {
-    ['tabEdit', 'tab1', 'tab2'].forEach(function (t) {
+    ['tabEdit', 'tab1', 'tab2', 'tab3'].forEach(function (t) {
       var btn = document.querySelector('.tab-btn[data-tab="' + t + '"]');
       if (btn) btn.classList.toggle('active', t === which);
       $(t).hidden = t !== which;
@@ -3018,8 +3400,14 @@ global.MTCore = MTCore;
       var nf = { html: formats.html, plain: formats.plain };
       if (nf.html == null && nf.plain != null && typeof latexToMathml === 'function') {
         try {
+          /* plain có thể đã kèm cặp $...$ / $$...$$ (nút Chép LaTeX giờ
+             chép kèm dấu $ cho công cụ biên dịch); MathML phải dựng từ mã
+             trần nên bóc cặp dấu $ ở hai đầu trước khi dựng. */
+          var rawPlain = nf.plain;
+          if (rawPlain.length > 4 && rawPlain.slice(0, 2) === '$$' && rawPlain.slice(-2) === '$$') rawPlain = rawPlain.slice(2, -2);
+          else if (rawPlain.length > 2 && rawPlain.charAt(0) === '$' && rawPlain.charAt(rawPlain.length - 1) === '$') rawPlain = rawPlain.slice(1, -1);
           nf.html = '<html xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><head><meta charset="utf-8"></head><body><!--StartFragment-->' +
-            latexToMathml(nf.plain) + '<!--EndFragment--></body></html>';
+            latexToMathml(rawPlain) + '<!--EndFragment--></body></html>';
         } catch (e) { nf.html = null; }
       }
       if (nf.html != null) {
@@ -3125,23 +3513,30 @@ global.MTCore = MTCore;
   }
   $('btnDocxEq').addEventListener('click', function () { exportEditorDocx('omml'); });
   $('btnDocxMt').addEventListener('click', function () { exportEditorDocx('mathtype'); });
+  /* Mã LaTeX kèm cặp dấu $ theo chế độ hiện tại — $...$ khi Inline,
+     $$...$$ khi Display — để dán thẳng vào các công cụ biên dịch
+     LaTeX / Markdown mà không phải tự thêm dấu $. */
+  function latexDelimited() {
+    return displayMode ? ('$$' + curLatex + '$$') : ('$' + curLatex + '$');
+  }
   $('btnCopyLatex').addEventListener('click', function () {
     if (!curLatex.trim()) { toast('Chưa có công thức để chép.'); return; }
-    copyTextPlain(curLatex, 'Đã chép mã LaTeX.');
+    copyTextPlain(latexDelimited(), displayMode ? 'Đã chép mã LaTeX kèm $$...$$ (Display).' : 'Đã chép mã LaTeX kèm $...$ (Inline).');
   });
   $('btnCopyAllLatex').addEventListener('click', function () {
     if (!curLatex.trim()) { toast('Chưa có công thức để chép.'); return; }
-    var doneMsg = 'Đã chép công thức — dán vào Word sẽ thành Equation; dán vào ô văn bản thường sẽ ra mã LaTeX.';
+    var doneMsg = 'Đã chép công thức — dán vào Word sẽ thành Equation; dán vào ô văn bản thường sẽ ra mã LaTeX kèm dấu $...$ (Inline) / $$...$$ (Display).';
     /* Chính: chọn toàn bộ nội dung trong khung soạn rồi copy — chính
        MathLive ghi các định dạng của nó (như khi bôi chọn + Cmd+C thủ
-       công); trình nghe 'copy' chỉ đặt thêm text/plain = mã LaTeX. */
+       công); trình nghe 'copy' chỉ đặt thêm text/plain = mã LaTeX kèm
+       cặp dấu $ theo chế độ hiện tại. */
     if (mfAvailable()) {
       var okMf = selectionCopy(function () {
         try { mf.focus(); } catch (e) {}
         var selected = false;
         try { selected = !!(mf.executeCommand && mf.executeCommand('selectAll')); } catch (e) {}
         if (!selected && typeof mf.select === 'function') { try { mf.select(); } catch (e) {} }
-      }, { plain: curLatex }, doneMsg);
+      }, { plain: latexDelimited() }, doneMsg);
       if (okMf) { saveHistory(curLatex); return; }
     }
     /* MathLive không khả dụng: khối MathML (KaTeX) ngoài màn hình. */
@@ -3151,11 +3546,11 @@ global.MTCore = MTCore;
       var html = '<html xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><head><meta charset="utf-8"></head><body><!--StartFragment-->' + mml + '<!--EndFragment--></body></html>';
       var div = makeOffscreenDiv(mml);
       var okDiv = selectionCopy(function () { selectElementContents(div); },
-        { html: html, plain: curLatex, replace: true }, doneMsg);
+        { html: html, plain: latexDelimited(), replace: true }, doneMsg);
       clearSelection(); div.remove();
       if (okDiv) { saveHistory(curLatex); return; }
     }
-    copyTextPlain(curLatex, 'Đã chép mã LaTeX (chưa tạo được Equation trong môi trường này).');
+    copyTextPlain(latexDelimited(), 'Đã chép mã LaTeX kèm dấu $ (chưa tạo được Equation trong môi trường này).');
   });
   $('btnSvg').addEventListener('click', function () {
     if (!curLatex.trim()) { toast('Chưa có công thức để xuất.'); return; }
@@ -3888,6 +4283,274 @@ global.MTCore = MTCore;
     });
   });
 
+  /* =====================================================================
+     TAB 3: MARKDOWN -> EQUATION / MATHTYPE
+     Cùng cấu trúc khối/nút nội dòng với lõi (MTCore.parseMarkdown) nên
+     xem trước, fragment chép sang Word và file .docx luôn nhất quán.
+     ===================================================================== */
+  var mdInput = $('mdInput'), mdCountEl = $('mdCount');
+  function mdBlocks() {
+    if (!hasCore || typeof MTCore.parseMarkdown !== 'function') return [];
+    try { return MTCore.parseMarkdown(mdInput.value); } catch (e) { return []; }
+  }
+  function refreshMdCount() {
+    var text = mdInput.value;
+    if (!text.trim()) { mdCountEl.textContent = 'Chưa có nội dung Markdown nào.'; return; }
+    var nMath = tab2SegmentsOf(text).length;
+    var nBlock = mdBlocks().length;
+    mdCountEl.innerHTML = 'Nhận diện được <b>' + nMath + '</b> đoạn mã LaTeX và <b>' + nBlock + '</b> khối nội dung (đoạn văn, tiêu đề, danh sách, bảng…).';
+  }
+  function mdNodesToDom(nodes, parent) {
+    (nodes || []).forEach(function (n) {
+      if (n.math != null) {
+        var s = document.createElement('span');
+        renderInto(s, n.math, n.display);
+        parent.appendChild(s);
+      } else if (n.link != null) {
+        var a = document.createElement('a');
+        a.href = n.link; a.target = '_blank'; a.rel = 'noopener';
+        mdNodesToDom(n.children, a);
+        parent.appendChild(a);
+      } else if (n.code) {
+        var cd = document.createElement('code');
+        cd.textContent = n.s;
+        parent.appendChild(cd);
+      } else {
+        var wrap = document.createTextNode(n.s);
+        if (n.st) { var st = document.createElement('s'); st.appendChild(wrap); wrap = st; }
+        if (n.i) { var em = document.createElement('em'); em.appendChild(wrap); wrap = em; }
+        if (n.b) { var be = document.createElement('strong'); be.appendChild(wrap); wrap = be; }
+        parent.appendChild(wrap);
+      }
+    });
+  }
+  function renderMdPreview() {
+    var box = $('mdPreview');
+    if (!box) return;
+    var text = mdInput.value;
+    box.innerHTML = '';
+    if (!text.trim()) {
+      box.innerHTML = '<span class="pv-empty">Nội dung xem trước sẽ hiện ở đây — tiêu đề, danh sách, bảng và định dạng đậm/nghiêng được thể hiện như trong Word, các đoạn $...$ hiện thành công thức.</span>';
+      return;
+    }
+    mdBlocks().forEach(function (b) {
+      if (b.type === 'heading') {
+        var h = document.createElement('h' + b.level);
+        mdNodesToDom(b.nodes, h);
+        box.appendChild(h);
+      } else if (b.type === 'display') {
+        var p = document.createElement('p');
+        var span = document.createElement('span');
+        span.className = 'pv-display';
+        renderInto(span, b.latex, true);
+        p.appendChild(span);
+        box.appendChild(p);
+      } else if (b.type === 'para') {
+        var pp = document.createElement('p');
+        mdNodesToDom(b.nodes, pp);
+        if (!pp.childNodes.length) pp.innerHTML = '&nbsp;';
+        box.appendChild(pp);
+      } else if (b.type === 'quote') {
+        var q = document.createElement('blockquote');
+        var qp = document.createElement('p');
+        mdNodesToDom(b.nodes, qp);
+        q.appendChild(qp);
+        box.appendChild(q);
+      } else if (b.type === 'hr') {
+        box.appendChild(document.createElement('hr'));
+      } else if (b.type === 'code') {
+        var pre = document.createElement('pre');
+        var code = document.createElement('code');
+        code.textContent = b.text;
+        pre.appendChild(code);
+        box.appendChild(pre);
+      } else if (b.type === 'list') {
+        var list = document.createElement(b.ordered ? 'ol' : 'ul');
+        b.items.forEach(function (it) {
+          var li = document.createElement('li');
+          if (it.level) li.style.marginLeft = (it.level * 22) + 'px';
+          if (it.task != null) li.appendChild(document.createTextNode(it.task ? '☑ ' : '☐ '));
+          mdNodesToDom(it.nodes, li);
+          list.appendChild(li);
+        });
+        box.appendChild(list);
+      } else if (b.type === 'table') {
+        var tbl = document.createElement('table');
+        var thead = document.createElement('thead');
+        var htr = document.createElement('tr');
+        b.header.forEach(function (cell, ci) {
+          var th = document.createElement('th');
+          th.style.textAlign = b.aligns[ci] || 'left';
+          mdNodesToDom(cell, th);
+          htr.appendChild(th);
+        });
+        thead.appendChild(htr);
+        tbl.appendChild(thead);
+        var tbody = document.createElement('tbody');
+        b.rows.forEach(function (row) {
+          var tr = document.createElement('tr');
+          row.forEach(function (cell, ci) {
+            var td = document.createElement('td');
+            td.style.textAlign = b.aligns[ci] || 'left';
+            mdNodesToDom(cell, td);
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+        tbl.appendChild(tbody);
+        box.appendChild(tbl);
+      }
+    });
+  }
+  function mdNodesToHtml(nodes, st) {
+    var out = '';
+    (nodes || []).forEach(function (n) {
+      if (n.math != null) {
+        try { out += latexToMathml(n.math); }
+        catch (e) { st.failed++; out += esc(n.display ? ('$$' + n.math + '$$') : ('$' + n.math + '$')); }
+      } else if (n.link != null) {
+        var inner = mdNodesToHtml(n.children, st);
+        out += /^https?:\/\//i.test(n.link) ? ('<a href="' + esc(n.link) + '">' + inner + '</a>') : inner;
+      } else {
+        var t = esc(n.s);
+        if (n.code) t = '<code>' + t + '</code>';
+        else {
+          if (n.st) t = '<s>' + t + '</s>';
+          if (n.i) t = '<i>' + t + '</i>';
+          if (n.b) t = '<b>' + t + '</b>';
+        }
+        out += t;
+      }
+    });
+    return out;
+  }
+  function buildMdFragment(text) {
+    var st = { failed: 0 };
+    var blocks = [];
+    try { blocks = MTCore.parseMarkdown(text); } catch (e) { blocks = []; }
+    var html = blocks.map(function (b) {
+      if (b.type === 'heading') return '<h' + b.level + '>' + mdNodesToHtml(b.nodes, st) + '</h' + b.level + '>';
+      if (b.type === 'display') {
+        try { return '<p align="center">' + latexToMathml(b.latex) + '</p>'; }
+        catch (e) { st.failed++; return '<p align="center">' + esc('$$' + b.latex + '$$') + '</p>'; }
+      }
+      if (b.type === 'para') return '<p>' + (mdNodesToHtml(b.nodes, st) || '&nbsp;') + '</p>';
+      if (b.type === 'quote') return '<blockquote><p>' + mdNodesToHtml(b.nodes, st) + '</p></blockquote>';
+      if (b.type === 'hr') return '<hr/>';
+      if (b.type === 'code') return '<pre>' + esc(b.text) + '</pre>';
+      if (b.type === 'list') {
+        var tag = b.ordered ? 'ol' : 'ul';
+        return '<' + tag + '>' + b.items.map(function (it) {
+          return '<li>' + (it.task != null ? (it.task ? '☑ ' : '☐ ') : '') + mdNodesToHtml(it.nodes, st) + '</li>';
+        }).join('') + '</' + tag + '>';
+      }
+      if (b.type === 'table') {
+        var th = b.header.map(function (c, ci) { return '<th align="' + (b.aligns[ci] || 'left') + '">' + mdNodesToHtml(c, st) + '</th>'; }).join('');
+        var trs = b.rows.map(function (r) {
+          return '<tr>' + r.map(function (c, ci) { return '<td align="' + (b.aligns[ci] || 'left') + '">' + mdNodesToHtml(c, st) + '</td>'; }).join('') + '</tr>';
+        }).join('');
+        return '<table border="1" cellspacing="0" cellpadding="6"><thead><tr>' + th + '</tr></thead><tbody>' + trs + '</tbody></table>';
+      }
+      return '';
+    });
+    return { fragment: html.join(''), failed: st.failed };
+  }
+  var btnMdCopy = $('btnMdCopyWord');
+  if (btnMdCopy) btnMdCopy.addEventListener('click', function () {
+    var text = mdInput.value;
+    if (!text.trim()) { toast('Chưa có nội dung để chép — hãy dán nội dung Markdown trước.'); return; }
+    if (!hasCore) { toast('Thư viện lõi chưa tải được — hãy tải lại trang.'); return; }
+    if (!hasKaTeX) { toast('KaTeX chưa tải được nên chưa tạo được Equation — hãy tải lại trang.'); return; }
+    var built = buildMdFragment(text);
+    var html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><head><meta charset="utf-8"></head><body><!--StartFragment-->' + built.fragment + '<!--EndFragment--></body></html>';
+    var doneMsg = built.failed
+      ? 'Đã chép nội dung — dán vào Word: định dạng Markdown thành định dạng Word, công thức thành Equation (có ' + built.failed + ' đoạn LaTeX không tạo được nên giữ nguyên mã); dán vào ô văn bản thường sẽ ra nguyên văn Markdown.'
+      : 'Đã chép toàn bộ nội dung — dán vào Word: định dạng Markdown thành định dạng Word, công thức thành Equation gốc; dán vào ô văn bản thường sẽ ra nguyên văn Markdown.';
+    var div = makeOffscreenDiv(built.fragment);
+    var okSel = selectionCopy(function () { selectElementContents(div); },
+      { html: html, plain: text, replace: true }, doneMsg);
+    clearSelection(); div.remove();
+    if (!okSel) copyRichForWord(html, text, doneMsg);
+  });
+
+  function tab3Mode() {
+    var r = document.querySelector('input[name="tab3Mode"]:checked');
+    return r ? r.value : 'omml';
+  }
+  document.querySelectorAll('input[name="tab3Mode"]').forEach(function (r) {
+    r.addEventListener('change', refreshMdState);
+  });
+  function refreshMdState() {
+    var btn = $('tab3ConvertBtn');
+    var ready = !!mdInput.value.trim();
+    var note = '';
+    if (!hasJSZip || !hasCore) { ready = false; note = 'Thư viện cần thiết chưa tải xong — kiểm tra kết nối mạng rồi tải lại trang.'; }
+    else if (tab3Mode() === 'omml' && !hasKaTeX) { ready = false; note = 'KaTeX chưa tải được nên chưa tạo được Equation; hãy kiểm tra kết nối mạng rồi tải lại trang, hoặc chọn đích MathType.'; }
+    else if (!ready) note = 'Hãy dán nội dung Markdown (hoặc chọn file .md) để bắt đầu.';
+    btn.disabled = !ready;
+    $('tab3Status').textContent = note;
+  }
+  mdInput.addEventListener('input', function () { refreshMdCount(); renderMdPreview(); refreshMdState(); });
+  $('pickMdBtn').addEventListener('click', function () { $('mdFileInput').click(); });
+  $('mdFileInput').addEventListener('change', function () {
+    var f = $('mdFileInput').files && $('mdFileInput').files[0];
+    $('mdFileInput').value = '';
+    if (!f) return;
+    var errEl = $('mdFileError');
+    errEl.classList.remove('show');
+    var reader = new FileReader();
+    reader.onerror = function () {
+      errEl.textContent = 'Không đọc được file “' + (f.name || 'Markdown') + '” từ máy của bạn. Hãy thử lại hoặc dán nội dung trực tiếp.';
+      errEl.classList.add('show');
+    };
+    reader.onload = function () {
+      mdInput.value = String(reader.result || '');
+      refreshMdCount(); renderMdPreview(); refreshMdState();
+      toast('Đã nạp nội dung từ file “' + f.name + '”.');
+    };
+    reader.readAsText(f);
+  });
+  $('tab3ConvertBtn').addEventListener('click', function () {
+    var errEl = $('tab3Error'), resEl = $('tab3Result');
+    errEl.classList.remove('show');
+    resEl.classList.remove('show');
+    if (!mdInput.value.trim()) { refreshMdState(); return; }
+    var mode = tab3Mode();
+    previewStats = { total: 0, failed: 0 };
+    var opts = { mode: mode, latexToMathml: latexToMathml, previewFor: previewFor };
+    var btn = $('tab3ConvertBtn');
+    btn.disabled = true;
+    btn.textContent = 'Đang chuyển đổi…';
+    MTCore.markdownToDocx(mdInput.value, opts, window.JSZip).then(function (res) {
+      btn.disabled = false;
+      btn.textContent = 'Chuyển đổi & tải file Word';
+      downloadBlob(res.data, 'markdown-da-chuyen-doi.docx');
+      var destLabel = mode === 'mathtype' ? 'MathType (Equation.DSMT4)' : 'Equation của Word';
+      $('tab3ResultText').textContent = 'Đã chuyển nội dung Markdown thành file “markdown-da-chuyen-doi.docx”: ' + res.converted + ' công thức thành ' + destLabel + ', định dạng tiêu đề, danh sách, bảng và trích dẫn được giữ nguyên.';
+      var ul = $('tab3Warnings');
+      ul.innerHTML = '';
+      (res.warnings || []).forEach(function (w) {
+        var li = document.createElement('li');
+        li.textContent = w;
+        ul.appendChild(li);
+      });
+      if (mode === 'mathtype' && previewStats.total > 0 && previewStats.failed > 0) {
+        var noteLi = document.createElement('li');
+        noteLi.textContent = previewStats.failed + '/' + previewStats.total + ' công thức chưa có ảnh xem trước (môi trường hiện tại chặn khâu chụp ảnh); dữ liệu MathType vẫn đầy đủ — mở bằng Word + MathType trên Windows sẽ hiển thị và sửa được. Nếu bạn đang mở ứng dụng trong khung xem trước, hãy tải file HTML của ứng dụng về và mở trực tiếp — ảnh xem trước sẽ tạo được đầy đủ.';
+        ul.appendChild(noteLi);
+      }
+      resEl.classList.add('show');
+      resEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      refreshMdState();
+    }).catch(function (err) {
+      btn.disabled = false;
+      btn.textContent = 'Chuyển đổi & tải file Word';
+      errEl.textContent = 'Chuyển đổi thất bại: ' + ((err && err.message) || 'lỗi không xác định') + '. Nội dung bạn đã nhập vẫn còn nguyên — hãy thử lại.';
+      errEl.classList.add('show');
+      refreshMdState();
+    });
+  });
+
   /* ---------- Khởi tạo ---------- */
   refreshLibWarnings();
   renderPalette();
@@ -3898,6 +4561,9 @@ global.MTCore = MTCore;
   refreshSegCount();
   renderTab2Preview();
   refreshTab2State();
+  refreshMdCount();
+  renderMdPreview();
+  refreshMdState();
   tryLoadMathLive();
 })();
     </script>
