@@ -1,5 +1,9 @@
 use std::process::Command;
 
+use cocoa::base::{id, nil};
+use cocoa::foundation::NSString;
+use objc::{class, msg_send, sel, sel_impl};
+
 /// Chạy một đoạn AppleScript qua osascript; Ok(stdout) nếu thoát 0, Err(stderr) nếu lỗi.
 fn run_script(script: &str) -> Result<String, String> {
     let out = Command::new("osascript")
@@ -24,9 +28,32 @@ fn short(s: &str) -> String {
     }
 }
 
-/// "Gửi thẳng vào Word": phía web đã đặt sẵn Equation vào clipboard hệ thống
-/// (qua plugin clipboard của chính app). Lệnh này dán vào Word bằng hai cách,
-/// theo thứ tự ưu tiên:
+/// Đặt nội dung RTF (kèm văn bản thuần dự phòng) lên clipboard hệ thống
+/// qua NSPasteboard — plugin clipboard của Tauri không có API ghi RTF,
+/// nên lệnh này tự ghi trực tiếp bằng AppKit. RTF chứa đối tượng OLE
+/// MathType kèm ảnh xem trước: Word dán vào sẽ thành đối tượng MathType
+/// thật (trên Mac không có MathType nên hiển thị ảnh xem trước; gửi file
+/// cho máy Windows có MathType sẽ mở sửa được như đối tượng MathType).
+fn set_clipboard_rtf(rtf: &str, plain: &str) -> Result<(), String> {
+    unsafe {
+        let pb: id = msg_send![class!(NSPasteboard), generalPasteboard];
+        let _: () = msg_send![pb, clearContents];
+        let rtf_str = NSString::alloc(nil).init_str(rtf);
+        let rtf_type = NSString::alloc(nil).init_str("public.rtf");
+        let ok_rtf: bool = msg_send![pb, setString: rtf_str forType: rtf_type];
+        if !ok_rtf {
+            return Err("Không ghi được nội dung RTF vào clipboard hệ thống.".into());
+        }
+        // Văn bản thuần dự phòng: dán vào chỗ không nhận RTF sẽ ra mã LaTeX.
+        let plain_str = NSString::alloc(nil).init_str(plain);
+        let plain_type = NSString::alloc(nil).init_str("public.utf8-plain-text");
+        let _: bool = msg_send![pb, setString: plain_str forType: plain_type];
+    }
+    Ok(())
+}
+
+/// Dán clipboard hiện tại vào tài liệu Word đang mở, bằng hai cách theo
+/// thứ tự ưu tiên:
 /// 1) Nhờ System Events bấm mục Paste trong menu Edit của Word — điều khiển
 ///    giao diện (AX), không tổng hợp phím tắt nên tránh được lỗi keystroke
 ///    (1002). (Lệnh `paste` trần từng dùng ở 1.0.2 đã chết: Word hiện đại
@@ -35,8 +62,7 @@ fn short(s: &str) -> String {
 /// 2) Dự phòng: nhờ System Events gửi Cmd+V — cần quyền Trợ năng.
 /// Nếu cả hai đều thất bại, trả về cả hai lỗi gốc kèm cả hai cách sửa
 /// (Tự động hoá và Trợ năng) để không bao giờ giấu mất một lớp lỗi nữa.
-#[tauri::command]
-fn push_to_word() -> Result<String, String> {
+fn paste_into_word() -> Result<String, String> {
     const NO_DOC: &str = "Chưa có tài liệu Word nào đang mở. Hãy mở sẵn một tài liệu Word, đặt con trỏ vào chỗ cần chèn rồi bấm lại.";
     const OK_MSG: &str = "Đã gửi công thức vào Word — công thức nằm tại vị trí con trỏ trong tài liệu.";
 
@@ -106,11 +132,35 @@ return "ok"
     ))
 }
 
+/// "Gửi thẳng vào Word" (Equation): phía web đã đặt sẵn Equation vào
+/// clipboard hệ thống (qua plugin clipboard của chính app); lệnh này chỉ
+/// dán vào Word bằng hai lớp đã kiểm chứng.
+#[tauri::command]
+fn push_to_word() -> Result<String, String> {
+    paste_into_word()
+}
+
+/// "Gửi thẳng vào Word MathType": phía web đã dựng sẵn RTF chứa đối tượng
+/// OLE MathType thật. Lệnh này đặt RTF lên clipboard rồi dán vào Word
+/// bằng đúng hai lớp đã kiểm chứng của push_to_word. Nếu lớp dán thất bại,
+/// nội dung MathType vẫn nằm trong clipboard nên người dùng dán thủ công
+/// bằng menu Sửa > Dán trong Word vẫn được.
+#[tauri::command]
+fn push_mathtype_to_word(rtf: String, plain: String) -> Result<String, String> {
+    set_clipboard_rtf(&rtf, &plain)?;
+    match paste_into_word() {
+        Ok(_) => Ok("Đã gửi công thức MathType vào Word — trên Mac hiển thị dạng ảnh xem trước; gửi file cho máy Windows có MathType sẽ mở sửa được như đối tượng MathType.".into()),
+        Err(e) => Err(format!(
+            "{e} Nội dung MathType đã nằm trong clipboard — bạn có thể dán thủ công bằng menu Sửa > Dán trong Word."
+        )),
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_clipboard_manager::init())
-        .invoke_handler(tauri::generate_handler![push_to_word])
+        .invoke_handler(tauri::generate_handler![push_to_word, push_mathtype_to_word])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

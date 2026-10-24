@@ -1,6 +1,6 @@
 [package]
 name = "chdmathtype"
-version = "1.0.4"
+version = "1.0.5"
 description = "ChdMathType — soạn công thức Toán tương thích MathType"
 authors = ["ChdMathType"]
 edition = "2021"
@@ -15,5 +15,7 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 tauri = { version = "2", features = [] }
 tauri-plugin-clipboard-manager = "2"
+cocoa = "0.25"
+objc = "0.2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
