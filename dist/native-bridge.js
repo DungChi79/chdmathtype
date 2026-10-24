@@ -12,6 +12,30 @@ import('./vendor/mathlive/mathlive.mjs').then(function (m) {
   } catch (e) { /* bo qua: MathLive tu tim fonts canh module */ }
 }).catch(function () {});
 
+// Dang ky ham chep clipboard he thong cho app: moi nut "chep sang Word" cua
+// app deu di qua selectionCopy, va selectionCopy se goi __chdNativeCopy neu
+// co (ban web khong co ham nay nen hanh vi khong doi). Ghi thang vao
+// NSPasteboard qua plugin cua Tauri — bo qua hoan toan cac API clipboard
+// khong on dinh cua WKWebView (nguyen nhan dan vao Word chi ra ma LaTeX).
+(function installNativeCopy() {
+  var cm = window.__TAURI__ && window.__TAURI__.clipboardManager;
+  if (!cm || typeof cm.writeHtml !== 'function') return;
+  window.__chdNativeCopy = function (formats) {
+    var p;
+    try {
+      p = Promise.resolve(cm.writeHtml(formats.html,
+        formats.plain != null ? String(formats.plain) : undefined));
+    } catch (e) {
+      p = Promise.reject(e);
+    }
+    window.__chdCopyPromise = p;
+    p.catch(function () {
+      nativeToast('Không ghi được vào clipboard hệ thống — hãy thử lại, hoặc dùng nút tải file .docx.');
+    });
+    return p;
+  };
+})();
+
 function nativeToast(msg) {
   var t = document.createElement('div');
   t.textContent = msg;
@@ -44,15 +68,26 @@ function wireWordButton() {
   b.textContent = '⇢ Gửi thẳng vào Word';
   b.title = 'Chép công thức dạng Equation rồi tự dán vào tài liệu Word đang mở, ngay tại vị trí con trỏ';
   b.addEventListener('click', function () {
-    copyBtn.click(); // luong chep Equation goc cua app (chay dong bo trong thao tac bam that)
-    setTimeout(function () {
+    copyBtn.click(); // app ghi Equation vao clipboard he thong qua __chdNativeCopy
+    var proceeded = false;
+    function proceed() {
+      if (proceeded) return;
+      proceeded = true;
       window.__TAURI__.core.invoke('push_to_word').then(function (msg) {
         nativeToast(msg || 'Đã gửi công thức vào Word.');
       }).catch(function (err) {
         nativeToast(typeof err === 'string' ? err :
           'Không gửi được vào Word. Hãy mở sẵn một tài liệu Word rồi thử lại.');
       });
-    }, 300);
+    }
+    // Cho viec ghi clipboard hoan tat roi moi dan; du phong bang moc 900ms.
+    var p = window.__chdCopyPromise;
+    if (p && typeof p.then === 'function') {
+      p.then(proceed, proceed);
+      setTimeout(proceed, 900);
+    } else {
+      setTimeout(proceed, 300);
+    }
   });
   copyBtn.parentNode.insertBefore(b, copyBtn.nextSibling);
   return true;

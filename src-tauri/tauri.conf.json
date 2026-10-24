@@ -1,1 +1,41 @@
-{"$schema":"https://schema.tauri.app/config/2","app":{"security":{"csp":null},"windows":[{"height":880,"label":"main","minHeight":640,"minWidth":960,"title":"ChdMathType","width":1320}],"withGlobalTauri":true},"build":{"frontendDist":"../dist"},"bundle":{"active":true,"category":"Education","icon":["icons/32x32.png","icons/128x128.png","icons/128x128@2x.png","icons/icon.icns","icons/icon.ico"],"shortDescription":"Soạn công thức Toán tương thích MathType","targets":["app","dmg"]},"identifier":"com.chdmathtype.app","productName":"ChdMathType","version":"1.0.0"}
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "app": {
+    "security": {
+      "csp": null
+    },
+    "windows": [
+      {
+        "height": 880,
+        "label": "main",
+        "minHeight": 640,
+        "minWidth": 960,
+        "title": "ChdMathType",
+        "width": 1320
+      }
+    ],
+    "withGlobalTauri": true
+  },
+  "build": {
+    "frontendDist": "../dist"
+  },
+  "bundle": {
+    "active": true,
+    "category": "Education",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "shortDescription": "Soạn công thức Toán tương thích MathType",
+    "targets": [
+      "app",
+      "dmg"
+    ]
+  },
+  "identifier": "com.chdmathtype.app",
+  "productName": "ChdMathType",
+  "version": "1.0.1"
+}

@@ -3009,6 +3009,26 @@ global.MTCore = MTCore;
      chọn, gắn trình nghe 'copy' dùng-một-lần đặt tường minh text/html và
      text/plain, rồi document.execCommand('copy'). */
   function selectionCopy(prepare, formats, doneMsg) {
+    /* Môi trường app native (macOS/Tauri): nếu cầu nối native đã đăng ký
+       window.__chdNativeCopy, ghi thẳng payload vào clipboard hệ thống —
+       đáng tin cậy hơn hẳn các API clipboard của webview — rồi kết thúc.
+       Bản web không có hàm này nên hành vi ở trình duyệt không đổi. */
+    if (typeof window.__chdNativeCopy === 'function' && formats &&
+        (formats.html != null || formats.plain != null)) {
+      var nf = { html: formats.html, plain: formats.plain };
+      if (nf.html == null && nf.plain != null && typeof latexToMathml === 'function') {
+        try {
+          nf.html = '<html xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><head><meta charset="utf-8"></head><body><!--StartFragment-->' +
+            latexToMathml(nf.plain) + '<!--EndFragment--></body></html>';
+        } catch (e) { nf.html = null; }
+      }
+      if (nf.html != null) {
+        try {
+          var nr = window.__chdNativeCopy(nf);
+          if (nr) { if (doneMsg) toast(doneMsg); return true; }
+        } catch (e) {}
+      }
+    }
     var handler = function (e) {
       document.removeEventListener('copy', handler);
       if (!e.clipboardData) return;
