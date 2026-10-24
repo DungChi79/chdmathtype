@@ -52,12 +52,18 @@ jobs:
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
         run: |
           set -e
-          echo "$APPLE_CERTIFICATE" | base64 --decode > /tmp/chd-cert.p12
+          # macOS dùng base64 -D (không phải --decode kiểu GNU).
+          printf '%s' "$APPLE_CERTIFICATE" | base64 -D > /tmp/chd-cert.p12
+          wc -c /tmp/chd-cert.p12
+          # Kiểm chứng cặp p12/mật khẩu trước khi import (mật khẩu là secret
+          # nên GitHub tự che trong log).
+          openssl pkcs12 -in /tmp/chd-cert.p12 -nokeys -passin "pass:$APPLE_CERTIFICATE_PASSWORD" -info -noout
           security create-keychain -p temppass build.keychain
           security import /tmp/chd-cert.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple: -s -k temppass build.keychain
           security list-keychains -d user -s build.keychain login.keychain
           security unlock-keychain -p temppass build.keychain
+          security find-identity -v -p codesigning build.keychain
           APP="src-tauri/target/universal-apple-darwin/release/bundle/macos/ChdMathType.app"
           codesign --force --deep --options runtime --timestamp=none --sign "ChdMathType Self-Signed" "$APP"
           codesign --verify --deep --strict "$APP"
