@@ -43,7 +43,8 @@ const latexVal = await page.evaluate(() =>
   [...document.querySelectorAll('textarea')].map(t => t.value).find(v => v.includes('frac')) ?? null);
 console.log('LATEX AFTER TYPE a:', JSON.stringify(latexVal));
 
-// --- Native-copy hook: "Chép cho Word" (payload phải chứa OMML) ---
+// --- Native-copy hook: "Chép cho Word" (bản 1.0.2: payload phải là MathML,
+///  vì OMML thô qua clipboard hệ thống không được Word nhận — xem máy người dùng) ---
 await page.evaluate(() => {
   window.__copied = null;
   window.__chdNativeCopy = (f) => { window.__copied = f; return Promise.resolve(true); };
@@ -51,6 +52,7 @@ await page.evaluate(() => {
 console.log('copy-word btn:', await clickByText('Chép cho Word'));
 await new Promise(r => setTimeout(r, 500));
 const copied1 = await page.evaluate(() => window.__copied && {
+  hasMathML: window.__copied.html.includes('<math'),
   hasOMML: window.__copied.html.includes('m:oMath'),
   plain: window.__copied.plain,
 });

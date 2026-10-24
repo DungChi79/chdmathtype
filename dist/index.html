@@ -3070,6 +3070,18 @@ global.MTCore = MTCore;
       '<!--EndFragment--></body></html>';
     var doneMsg = 'Đã chép Equation — dán vào Word (Cmd+V) sẽ thành Equation gốc; dán vào ô văn bản thường sẽ ra mã LaTeX.';
     function done() { saveHistory(curLatex); }
+    /* Vỏ native (Tauri): Word nhận MathML qua clipboard hệ thống tốt hơn
+       OMML thô (đã kiểm chứng trên máy người dùng: nút "Sao chép tất cả"
+       dùng MathML thì dán ra Equation, còn OMML thô thì dán ra LaTeX).
+       Bản web không có hook nên vẫn đi đường OMML cũ bên dưới. */
+    if (typeof window.__chdNativeCopy === 'function') {
+      try {
+        var mmlOnly = latexToMathml(curLatex);
+        var mmlHtml = '<html xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><head><meta charset="utf-8"></head><body><!--StartFragment-->' + mmlOnly + '<!--EndFragment--></body></html>';
+        var okNative = selectionCopy(function () {}, { html: mmlHtml, plain: curLatex }, doneMsg);
+        if (okNative) { done(); return; }
+      } catch (e) {}
+    }
     /* Chính: copy-theo-lựa-chọn trên khối OMML ngoài màn hình. */
     var div = makeOffscreenDiv(html);
     var okSel = selectionCopy(function () { selectElementContents(div); },

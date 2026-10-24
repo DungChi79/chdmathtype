@@ -27,8 +27,9 @@ fn short(s: &str) -> String {
 /// "Gửi thẳng vào Word": phía web đã đặt sẵn Equation vào clipboard hệ thống
 /// (qua plugin clipboard của chính app). Lệnh này dán vào Word bằng hai cách,
 /// theo thứ tự ưu tiên:
-/// 1) Nhờ chính Word dán tại vùng chọn (Selection.Paste qua VBA) — chỉ cần
-///    quyền Tự động hoá, không cần Trợ năng.
+/// 1) Lệnh `paste` của chính Word tại vùng chọn — chỉ cần quyền Tự động hoá,
+///    không cần Trợ năng. (Lớp VBA "do Visual Basic" từng dùng ở 1.0.1 đã
+///    bị Word hiện đại loại bỏ: osascript báo lỗi cú pháp -2741 tại đó.)
 /// 2) Dự phòng: nhờ System Events gửi Cmd+V — cần quyền Trợ năng.
 /// Nếu cả hai đều thất bại, trả về hướng dẫn theo đúng loại quyền còn thiếu
 /// kèm chi tiết lỗi gốc để người dùng chụp màn hình gửi lại khi cần.
@@ -43,7 +44,7 @@ tell application "Microsoft Word"
         error "NO_DOC"
     end if
     activate
-    do Visual Basic "Selection.Paste"
+    paste
 end tell
 return "ok"
 "#;
@@ -86,6 +87,12 @@ return "ok"
     if both.contains("-25211") || both.contains("assistive") {
         return Err(format!(
             "macOS chưa cấp quyền Trợ năng cho ChdMathType. Mở Cài đặt hệ thống → Quyền riêng tư & Bảo mật → Trợ năng, bật ChdMathType, thoát hẳn app (Cmd+Q) rồi mở lại và thử lần nữa. (Chi tiết lỗi: {})",
+            short(&e2)
+        ));
+    }
+    if both.contains("send keystrokes") || both.contains("1002") {
+        return Err(format!(
+            "macOS chưa cho phép gửi phím tắt vào Word. Mở Cài đặt hệ thống → Quyền riêng tư & Bảo mật → Trợ năng: xóa ChdMathType khỏi danh sách (nút -), thêm lại từ thư mục Applications, thoát hẳn app (Cmd+Q) rồi mở lại và thử lần nữa. (Chi tiết lỗi: {})",
             short(&e2)
         ));
     }
