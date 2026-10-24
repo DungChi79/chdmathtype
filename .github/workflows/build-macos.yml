@@ -42,6 +42,7 @@ jobs:
         env:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: "ChdMathType Self-Signed"
         run: npx tauri build --target universal-apple-darwin
 
       - name: Upload dmg artifact
