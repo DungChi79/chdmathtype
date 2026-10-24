@@ -33,17 +33,47 @@ jobs:
       - name: Generate icon set from icons/icon.png
         run: npx tauri icon src-tauri/icons/icon.png
 
-      - name: Build universal app + dmg
-        # Ký app bằng chứng chỉ tự ký lưu trong repo secrets: chữ ký ổn định
-        # theo từng bản build (không như ký ad-hoc), nên quyền Trợ năng/Tự động
-        # hoá người dùng đã cấp sẽ không bị mất khi cập nhật bản mới.
-        # Lưu ý: tự ký KHÔNG thay chứng chỉ Apple nên lần mở đầu vẫn cần
-        # chuột phải → Mở.
+      - name: Build universal app (app bundle only, unsigned for now)
+        # Tauri tự ký bằng APPLE_CERTIFICATE đã thử hai lần đều gãy ở bước
+        # "failed to resolve signing identity": bộ phân giải danh tính của
+        # Tauri không liệt kê được chứng chỉ tự ký (không nằm trong chuỗi
+        # tin cậy của Apple). Vì vậy build app trước ở dạng chưa ký, rồi ký
+        # thủ công bằng codesign ở bước sau — codesign chỉ cần khóa riêng
+        # trong keychain, không cần chứng chỉ được Apple tin cậy.
+        run: npx tauri build --target universal-apple-darwin --bundles app
+
+      - name: Sign app with the stable self-signed certificate
+        # Chữ ký ổn định theo từng bản build (không như ký ad-hoc), nên
+        # quyền Trợ năng/Tự động hoá người dùng đã cấp sẽ không bị mất khi
+        # cập nhật bản mới. Lưu ý: tự ký KHÔNG thay chứng chỉ Apple nên
+        # lần mở đầu vẫn cần chuột phải → Mở.
         env:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: "ChdMathType Self-Signed"
-        run: npx tauri build --target universal-apple-darwin
+        run: |
+          set -e
+          echo "$APPLE_CERTIFICATE" | base64 --decode > /tmp/chd-cert.p12
+          security create-keychain -p temppass build.keychain
+          security import /tmp/chd-cert.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k temppass build.keychain
+          security list-keychains -d user -s build.keychain login.keychain
+          security unlock-keychain -p temppass build.keychain
+          APP="src-tauri/target/universal-apple-darwin/release/bundle/macos/ChdMathType.app"
+          codesign --force --deep --options runtime --timestamp=none --sign "ChdMathType Self-Signed" "$APP"
+          codesign --verify --deep --strict "$APP"
+          codesign -dv "$APP" 2>&1 | grep -i "Authority" | head -2
+          rm -f /tmp/chd-cert.p12
+
+      - name: Package signed app into dmg
+        run: |
+          set -e
+          APP="src-tauri/target/universal-apple-darwin/release/bundle/macos/ChdMathType.app"
+          rm -rf /tmp/dmg-staging && mkdir -p /tmp/dmg-staging
+          cp -R "$APP" /tmp/dmg-staging/
+          ln -s /Applications /tmp/dmg-staging/Applications
+          mkdir -p src-tauri/target/universal-apple-darwin/release/bundle/dmg
+          hdiutil create -volname "ChdMathType" -srcfolder /tmp/dmg-staging -ov -format UDZO "src-tauri/target/universal-apple-darwin/release/bundle/dmg/ChdMathType_1.0.4_universal.dmg"
+          ls -la src-tauri/target/universal-apple-darwin/release/bundle/dmg/
 
       - name: Upload dmg artifact
         uses: actions/upload-artifact@v4
