@@ -981,6 +981,7 @@ function writeCharRecord(w, ch, opts2) {
     else if (ch.length === 1 && '+-=<>()[]/.,;:!?*|\'’.'.includes(ch)) tf = TF_SYM;
     if (tf === TF_SYM && code <= 0xFF) fontpos = code;
   }
+  if (ch === '-' && tf === TF_SYM) code = 0x2212; // real MathType writes U+2212 for math minus
   const opts = fontpos !== null ? 0x04 : 0;
   w.u8(2); w.u8(opts); w.sint(tf); w.u16(code);
   if (fontpos !== null) w.u8(fontpos);
@@ -1038,13 +1039,13 @@ function writeNode(w, node) {
       writeTmpl(w, 11, node.small ? 1 : 0, [writeSlot(node.num), writeSlot(node.den)]);
       return;
     case 'sqrt':
-      writeTmpl(w, 10, 0, [writeSlot(node.rad), node.deg ? writeSlot(node.deg) : writeNullLine]);
+      writeTmpl(w, 10, 0, [writeSlot(node.rad), w => w.u8(0x0B), node.deg ? writeSlot(node.deg) : writeNullLine]);
       return;
     case 'script': {
       writeNode(w, node.base);
-      if (node.sub && node.sup) writeTmpl(w, 29, 0, [writeSlot(node.sub), writeSlot(node.sup)]);
-      else if (node.sub) writeTmpl(w, 27, 0, [writeSlot(node.sub)]);
-      else if (node.sup) writeTmpl(w, 28, 0, [writeSlot(node.sup)]);
+      if (node.sub && node.sup) { writeTmpl(w, 29, 0, [w => w.u8(0x0B), writeSlot(node.sub), writeSlot(node.sup)]); w.u8(0x0A); }
+      else if (node.sub) { writeTmpl(w, 27, 0, [w => w.u8(0x0B), writeSlot(node.sub), writeNullLine]); w.u8(0x0A); }
+      else if (node.sup) { writeTmpl(w, 28, 0, [w => w.u8(0x0B), writeNullLine, writeSlot(node.sup)]); w.u8(0x0A); }
       return;
     }
     case 'fence': {
@@ -1126,6 +1127,12 @@ function writeBigOp(w, node, rest) {
   if (node.op === 'iiint') { sel = 15; variation = 3; }
   if (node.op === 'oint') { sel = 15; variation = 4; }
   const mainFn = x => writeLine(x, { t: 'seq', items: rest });
+  if (node.op === 'int' && node.sup && node.sub) {
+    // Real MathType integral with both limits: variation 113, script-size before the
+    // upper limit, symbol-size + integral sign char at the end (verified vs a real file).
+    writeTmpl(w, 15, 113, [mainFn, x => x.u8(0x0B), writeSlot(node.sup), writeSlot(node.sub), x => x.u8(0x0D), x => writeCharRecord(x, '\u222B', null)]);
+    return;
+  }
   writeTmpl(w, sel, variation, [mainFn, node.sup ? writeSlot(node.sup) : writeNullLine, node.sub ? writeSlot(node.sub) : writeNullLine]);
 }
 function latexToEquationNative(latex, warnings) {

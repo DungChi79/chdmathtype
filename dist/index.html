@@ -813,7 +813,7 @@
       .login-ok { background: var(--accent-soft); border: 1px solid var(--accent); color: var(--accent-strong); border-radius: 9px; padding: 9px 12px; font-size: 13.5px; margin-top: 14px; }
       @media (prefers-color-scheme: dark) { .login-ok { color: var(--accent-strong); } }
     </style>
-  <meta data-osh-rid="01M5VYDG9RRT396REKGJJ8M2NT" data-osh-rid-cap="3924f59d3cc4873878302dbe9b96f842632eb29856723f79a9ba7a7a7c586c7f"></head>
+  <meta data-osh-rid="01M5X72APXVEM130X0DCKFQ28T" data-osh-rid-cap="75111d9cc199e808e9e295940be38d610aff2e6a2679dd724cd01dc298a9e2c6"></head>
   <body>
     <!-- ================= MÀN HÌNH ĐĂNG NHẬP (login wall) =================
          Chưa đăng nhập + chưa qua danh sách cấp quyền (allowlist) thì chỉ thấy
@@ -1542,12 +1542,12 @@
      dưới đây cấp token đó từ bản kích hoạt đã lưu. Chưa kích hoạt thì
      module rơi về chế độ phiên + JSON thủ công như cũ.
    File này được chèn vào dist/index.html bởi tools/make_dist_native.py,
-   với https://hotrohoctap.com/1ai/chdmathtype/api/ và 1.0.10 đã thay bằng giá trị thật.
+   với https://hotrohoctap.com/1ai/chdmathtype/api/ và 1.0.11 đã thay bằng giá trị thật.
    ===================================================================== */
 (function () {
   'use strict';
   var API_BASE = 'https://hotrohoctap.com/1ai/chdmathtype/api/';
-  var APP_VERSION = '1.0.10';
+  var APP_VERSION = '1.0.11';
   var CACHE_KEY = 'chd_machine_activation_v1';
   var $ = function (id) { return document.getElementById(id); };
   var loginScreen = $('loginScreen'), appWrap = $('appWrap');
