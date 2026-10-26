@@ -1,6 +1,6 @@
 [package]
 name = "chdmathtype"
-version = "1.0.9"
+version = "1.0.10"
 description = "ChdMathType — soạn công thức Toán tương thích MathType"
 authors = ["ChdMathType"]
 edition = "2021"

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Dựng dist/ cho app native ChdMathType 1.0.9 từ frontend web đa file đã tải
+"""Dựng dist/ cho app native ChdMathType 1.0.10 từ frontend web đa file đã tải
 về (index.html + assets/js/*.js + assets/logo.png), theo hướng kích hoạt
 theo mã máy (thay cho đăng nhập Firebase của bản web):
   - mọi CDN -> bản đóng gói trong dist/vendor/ (đường dẫn tương đối theo
@@ -37,7 +37,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--src", default="/tmp/chd-web")
     ap.add_argument("--api-base", default="https://hotrohoctap.com/1ai/chdmathtype/api/")
-    ap.add_argument("--version", default="1.0.9")
+    ap.add_argument("--version", default="1.0.10")
     args = ap.parse_args()
     src = pathlib.Path(args.src)
     api_base = args.api_base
@@ -54,6 +54,18 @@ def main():
     html = (src / "index.html").read_text(encoding="utf-8")
     # Thẻ script do hosting chèn khi phục vụ trang (không thuộc artifact).
     html = re.sub(r'<script src="/_osh/collect\.js"[^>]*></script>', "", html, count=1)
+    # Nút Hỗ trợ giờ là <button> (không còn là link): gắn URL vào data-chd-url
+    # để cầu nối native mở duy nhất bằng shell hệ thống. Bước này PHẢI chạy
+    # TRƯỚC khi khối auth shell bị thay (handler window.open của nút nằm
+    # chung khối script với auth shell nên sẽ bị gỡ sau đó); URL hardcode
+    # ở đây PHẢI khớp URL trong handler của nút, assert dưới bắt lệch
+    # (transform dừng, không ghi file nào) nếu web đổi URL hỗ trợ.
+    SUPPORT_URL = "https://chanduc.notion.site/chdmathtype"
+    assert SUPPORT_URL in html, "support URL not found in fetched index.html"
+    html = replace_once(html,
+        '<button class="btn-support" id="btnSupport" type="button" title="Mở trang hướng dẫn sử dụng ChdMathType">',
+        '<button class="btn-support" id="btnSupport" type="button" title="Mở trang hướng dẫn sử dụng ChdMathType" data-chd-url="' + SUPPORT_URL + '">',
+        "btnSupport data-url")
     html = replace_once(html,
         "https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap",
         "./vendor/fonts/fonts.css", "fonts css2")

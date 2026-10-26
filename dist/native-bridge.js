@@ -46,11 +46,35 @@ import('./vendor/mathlive/mathlive.mjs').then(function (m) {
   if (document.documentElement.dataset.chdExtWired) return;
   document.documentElement.dataset.chdExtWired = '1';
   document.addEventListener('click', function (ev) {
+    /* Nút Hỗ trợ giờ là <button> (không còn là link): mở duy nhất bằng
+       shell hệ thống, chặn handler window.open gốc của nút để không còn
+       hai đường mở cùng lúc. URL lấy từ data-chd-url do transform gắn;
+       nếu không có URL thì để handler gốc chạy (không chặn). */
+    var sup = ev.target && ev.target.closest ? ev.target.closest('#btnSupport') : null;
+    if (sup) {
+      var u = sup.getAttribute('data-chd-url') || '';
+      if (u) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        var nowSup = Date.now();
+        if (window.__chdLastExtOpen && window.__chdLastExtOpen.url === u && nowSup - window.__chdLastExtOpen.t < 1500) return;
+        window.__chdLastExtOpen = { url: u, t: nowSup };
+        window.__TAURI__.core.invoke('open_external_url', { url: u }).catch(function () {
+          nativeToast('Không mở được link — hãy mở thủ công: ' + u);
+        });
+      }
+      return;
+    }
     var a = ev.target && ev.target.closest ? ev.target.closest('a') : null;
     if (!a) return;
     var href = a.getAttribute('href') || '';
     if (href.indexOf('http://') !== 0 && href.indexOf('https://') !== 0) return;
     ev.preventDefault();
+    /* Chống mở trùng: bấm đúp/trackpad chạm đúp hoặc handler chạy lặp
+       trong 1,5 giây với cùng một URL thì chỉ mở một lần duy nhất. */
+    var now = Date.now();
+    if (window.__chdLastExtOpen && window.__chdLastExtOpen.url === href && now - window.__chdLastExtOpen.t < 1500) return;
+    window.__chdLastExtOpen = { url: href, t: now };
     window.__TAURI__.core.invoke('open_external_url', { url: href }).catch(function () {
       nativeToast('Không mở được link — hãy mở thủ công: ' + href);
     });

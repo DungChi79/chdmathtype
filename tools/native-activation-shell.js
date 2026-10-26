@@ -6,10 +6,10 @@
    - Kích hoạt đã lưu trong localStorage: mở lại dùng ngay cả khi không
      mạng; có mạng thì kiểm tra thầm lặng; chỉ khóa khi server trả lời rõ
      đã thu hồi / hết hạn / không còn mã (lỗi mạng KHÔNG khóa).
-   - ĐỀ THI đồng bộ cloud cần token Firebase (chỉ có trên web) nên ở bản
-     native v1 tab này chạy theo chế độ phiên + JSON thủ công (banner của
-     module ĐỀ THI sẽ báo rõ); ChdAuth dưới đây chỉ để module không lỗi
-     khi hỏi token.
+   - ĐỀ THI đồng bộ cloud bằng token mã máy (server chấp nhận token
+     chdmc_<base64url email>.<mã đầy đủ> cho các API dữ liệu); ChdAuth
+     dưới đây cấp token đó từ bản kích hoạt đã lưu. Chưa kích hoạt thì
+     module rơi về chế độ phiên + JSON thủ công như cũ.
    File này được chèn vào dist/index.html bởi tools/make_dist_native.py,
    với __CHD_API_BASE__ và __CHD_APP_VERSION__ đã thay bằng giá trị thật.
    ===================================================================== */
@@ -22,11 +22,23 @@
   var loginScreen = $('loginScreen'), appWrap = $('appWrap');
   var appLoaded = false, unlocking = false, currentMachine = null;
 
-  /* Cầu nối token cho module ĐỀ THI (bản native v1: không có token nên
-     mọi gọi API cloud đi vào nhánh báo lỗi + JSON thủ công của module). */
+  /* Cầu nối token cho module ĐỀ THI: trả token mã máy để module đồng bộ
+     cloud như bản web. Token đọc từ bản kích hoạt đã lưu lúc gọi (không
+     đọc lúc định nghĩa), nên cả trường hợp mở lại từ bản lưu lẫn kích
+     hoạt mới đều dùng được; chưa kích hoạt thì reject để module rơi về
+     chế độ phiên + JSON. Base64url giữ padding '=' để mọi decoder đều
+     đọc được; '.' không bao giờ xuất hiện trong base64url nên tách token
+     an toàn. */
+  function b64urlUtf8(s) {
+    return btoa(unescape(encodeURIComponent(s))).replace(/\+/g, '-').replace(/\//g, '_');
+  }
   window.ChdAuth = {
     user: null,
-    getIdToken: function () { return Promise.reject(new Error('Chưa đăng nhập.')); }
+    getIdToken: function () {
+      var c = lsGet(CACHE_KEY, null);
+      if (!c || !c.email || !c.code) return Promise.reject(new Error('Chưa đăng nhập.'));
+      return Promise.resolve('chdmc_' + b64urlUtf8(c.email) + '.' + c.code);
+    }
   };
 
   var APP_SCRIPTS = ['assets/js/core.js', 'assets/js/app.js', 'assets/js/word-image.js', 'assets/js/dethi.js'];
@@ -155,6 +167,7 @@
     unlocking = true;
     showNote('Đã kích hoạt — đang tải ứng dụng…', true);
     lsSet(CACHE_KEY, { email: email, code: code, display: display, activated_at: Date.now() });
+    window.ChdAuth.user = { email: email };
     var an = $('authName'), ae = $('authEmail'), av = $('authAvatar');
     if (an) an.textContent = 'Đã kích hoạt';
     if (ae) ae.textContent = email || '';
@@ -170,6 +183,7 @@
   }
   function lockOut(email, reason) {
     lsDel(CACHE_KEY);
+    window.ChdAuth.user = null;
     showActivation(email);
     if (reason) showErr(reason);
     refreshCode();
@@ -262,6 +276,7 @@
     if (lo) lo.addEventListener('click', function () {
       var cached = lsGet(CACHE_KEY, null);
       lsDel(CACHE_KEY);
+      window.ChdAuth.user = null;
       showActivation(cached && cached.email ? cached.email : '');
       showNote('Đã đăng xuất khỏi máy này. Muốn dùng lại, bấm “Kiểm tra kích hoạt”.');
     });
