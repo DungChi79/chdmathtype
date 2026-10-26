@@ -156,11 +156,54 @@ fn push_mathtype_to_word(rtf: String, plain: String) -> Result<String, String> {
     }
 }
 
+/// Mã máy của thiết bị (dùng cho kích hoạt bản quyền theo máy, thay cho
+/// đăng nhập): đọc machine-uid của hệ thống (macOS: IOPlatformUUID,
+/// Windows: MachineGuid) rồi băm SHA-256 với muối riêng của app. Serial
+/// thô không bao giờ rời khỏi máy — chỉ mã băm mới được gửi cho server,
+/// và mã hiển thị chỉ là 20 ký tự đầu của mã băm, nhóm 4 ký tự để người
+/// dùng đọc/nhắn cho admin.
+#[derive(serde::Serialize)]
+struct MachineCode {
+    code: String,
+    display: String,
+}
+
+#[tauri::command]
+fn get_machine_code() -> Result<MachineCode, String> {
+    let uid = machine_uid::get().map_err(|e| format!("Không đọc được mã máy: {e}"))?;
+    use sha2::{Digest, Sha256};
+    let mut h = Sha256::new();
+    h.update(b"ChdMathType-machine-v1");
+    h.update(uid.as_bytes());
+    let code = format!("{:x}", h.finalize());
+    let short = &code[..20];
+    let display = (0..5)
+        .map(|i| &short[i * 4..i * 4 + 4])
+        .collect::<Vec<_>>()
+        .join("-");
+    Ok(MachineCode { code, display })
+}
+
+/// Mở một URL ngoài bằng trình duyệt mặc định của hệ thống (dùng cho nút
+/// "Hỗ trợ" và các link ngoài khác trong app: webview của app không mở
+/// được tab mới nên link ngoài phải đi qua shell).
+#[tauri::command]
+fn open_external_url(app: tauri::AppHandle, url: String) -> Result<(), String> {
+    use tauri_plugin_shell::ShellExt;
+    app.shell().open(url, None).map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_clipboard_manager::init())
-        .invoke_handler(tauri::generate_handler![push_to_word, push_mathtype_to_word])
+        .plugin(tauri_plugin_shell::init())
+        .invoke_handler(tauri::generate_handler![
+            push_to_word,
+            push_mathtype_to_word,
+            open_external_url,
+            get_machine_code
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

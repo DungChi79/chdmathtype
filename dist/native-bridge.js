@@ -36,6 +36,27 @@ import('./vendor/mathlive/mathlive.mjs').then(function (m) {
   };
 })();
 
+// Mở mọi link http(s) bằng trình duyệt hệ thống thay vì trong webview:
+// webview của app không mở được tab mới, nên nút "Hỗ trợ" (và các link
+// ngoài khác) cần đi qua lệnh shell của Tauri. Chỉ chặn link http(s)
+// tuyệt đối; link tương đối, blob: và tải file trong app không bị đụng.
+(function installExternalLinkOpener() {
+  if (!window.__TAURI__ || !window.__TAURI__.core ||
+      typeof window.__TAURI__.core.invoke !== 'function') return;
+  if (document.documentElement.dataset.chdExtWired) return;
+  document.documentElement.dataset.chdExtWired = '1';
+  document.addEventListener('click', function (ev) {
+    var a = ev.target && ev.target.closest ? ev.target.closest('a') : null;
+    if (!a) return;
+    var href = a.getAttribute('href') || '';
+    if (href.indexOf('http://') !== 0 && href.indexOf('https://') !== 0) return;
+    ev.preventDefault();
+    window.__TAURI__.core.invoke('open_external_url', { url: href }).catch(function () {
+      nativeToast('Không mở được link — hãy mở thủ công: ' + href);
+    });
+  }, true);
+})();
+
 function nativeToast(msg) {
   var t = document.createElement('div');
   t.textContent = msg;
@@ -269,7 +290,9 @@ function wireMathTypeButton(copyBtn, pushBtn) {
   return true;
 }
 
-var chdTries = 0;
+// Poll cho tới khi gắn được nút (không giới hạn số lần): app mới chỉ tạo
+// nút "Chép cho Word" sau khi đăng nhập xong, nên giới hạn 10 giây cũ sẽ
+// bỏ lỡ nút nếu đăng nhập lâu hơn.
 var chdTimer = setInterval(function () {
-  if (wireWordButton() || ++chdTries > 40) clearInterval(chdTimer);
+  if (wireWordButton()) clearInterval(chdTimer);
 }, 250);
