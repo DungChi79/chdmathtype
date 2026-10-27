@@ -867,7 +867,7 @@ function parseLatex(input, warnings) {
           return { t: 'pile', lines: cells.map(r => r[0]) };
         }
         const mat = { t: 'matrix', env, rows: cells };
-        const F = { pmatrix: ['(', ')'], bmatrix: ['[', ']'], Bmatrix: ['\\{', '\\}'], vmatrix: ['|', '|'], Vmatrix: ['\u2016', '\u2016'], cases: ['\\{', '.'] };
+        const F = { pmatrix: ['(', ')'], bmatrix: ['[', ']'], Bmatrix: ['\\{', '\\}'], vmatrix: ['\\lvert', '\\rvert'], Vmatrix: ['\u2016', '\u2016'], cases: ['\\{', null] };
         if (F[env]) return { t: 'fence', l: F[env][0], r: F[env][1], sized: true, inner: mat };
         return mat;
       }
@@ -894,6 +894,7 @@ function parseLatex(input, warnings) {
           c === 'int' || c === 'iint' || c === 'iiint' || c === 'oint' || c === 'lim') {
         return { t: 'bigop', op: c, sub: null, sup: null };
       }
+      if (c === 'vert') return { t: 'char', ch: '|' };
       if (c === 'quad' || c === 'qquad') return { t: 'char', ch: ' ' };
       if (c === 'displaystyle' || c === 'limits' || c === 'nolimits' || c === 'limits') return { t: 'char', ch: '' };
       if (c === 'not') {
@@ -1117,7 +1118,7 @@ function writeNode(w, node) {
 function writeBigOp(w, node, rest) {
   if (node.op === 'lim') {
     const mainFn = x => { x.u8(1); x.u8(0); for (const ch of 'lim') writeCharRecord(x, ch, { tf: TF_FUNC }); x.u8(0); };
-    writeTmpl(w, 23, 0, [mainFn, node.sub ? writeSlot(node.sub) : writeNullLine, node.sup ? writeSlot(node.sup) : writeNullLine]);
+    writeTmpl(w, 23, 16, [mainFn, x => x.u8(0x0B), node.sub ? writeSlot(node.sub) : writeNullLine, node.sup ? writeSlot(node.sup) : writeNullLine]);
     return;
   }
   const selMap = { sum: 16, prod: 17, coprod: 18, bigcup: 19, bigcap: 20 };
@@ -1133,7 +1134,8 @@ function writeBigOp(w, node, rest) {
     writeTmpl(w, 15, 113, [mainFn, x => x.u8(0x0B), writeSlot(node.sup), writeSlot(node.sub), x => x.u8(0x0D), x => writeCharRecord(x, '\u222B', null)]);
     return;
   }
-  writeTmpl(w, sel, variation, [mainFn, node.sup ? writeSlot(node.sup) : writeNullLine, node.sub ? writeSlot(node.sub) : writeNullLine]);
+  const signMap = { sum: '\u2211', prod: '\u220F', coprod: '\u2210', bigcup: '\u22C3', bigcap: '\u22C2', int: '\u222B', iint: '\u222C', iiint: '\u222D', oint: '\u222E' };
+  writeTmpl(w, sel, variation, [mainFn, x => x.u8(0x0B), node.sup ? writeSlot(node.sup) : writeNullLine, node.sub ? writeSlot(node.sub) : writeNullLine, x => x.u8(0x0D), x => writeCharRecord(x, signMap[node.op], null)]);
 }
 function latexToEquationNative(latex, warnings) {
   const ast = parseLatex(latex, warnings);
